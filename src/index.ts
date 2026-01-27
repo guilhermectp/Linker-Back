@@ -1,0 +1,29 @@
+import express from "express";
+import http from "http";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import planRouter from "./routes/plan.route";
+
+dotenv.config();
+const app = express();
+const server = http.createServer(app);
+const port = process.env.PORT || 3001;
+
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
+
+app.use("/planos", planRouter);
+app.use("/", async (req, res) => {
+  res.send("Server running index");
+});
+
+server.listen(port, () => {
+  console.log("Servidor rodando na porta " + port);
+});

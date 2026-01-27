@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum ClienteStatus {
+  ATIVO
+  CANCELADO
+}
+
+enum PlanoStatus {
+  ATIVO
+  REDUZIDO
+  BLOQUEADO
+}
+
+enum BoletoStatus {
+  PAGO
+  PENDENTE
+  ATRASADO
+  CANCELADO
+}
+
+enum SuporteStatus {
+  ABERTO
+  EM_ANDAMENTO
+  CANCELADO
+  FINALIZADO
+}
+
+//////////////////////
+// MODELS
+//////////////////////
+
+model Cliente {
+  id               Int              @id @default(autoincrement())
+  cpf              String           @unique
+  nome             String
+  email            String?          @unique
+  telefone         String
+  senhaCentralCliente     String
+  status           ClienteStatus    @default(ATIVO)
+
+  pontosConexao    PontoConexao[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  @@map("cliente")
+}
+
+
+
+model PontoConexao {
+  id                 Int            @id @default(autoincrement())
+  status             PlanoStatus    @default(ATIVO)
+  diaVencimento     Int            // dia do mês (ex: 10)
+  dataUltimoPagamento DateTime?
+
+  loginMk            String         @unique
+  senhaMk            String
+
+  cep                String
+  cidade             String
+  bairro             String
+  rua                String
+  numero             String
+  complemento        String?
+  latitude           Float?
+  longitude          Float?
+
+
+  clienteId          Int
+  planoId            Int
+
+  cliente            Cliente        @relation(fields: [clienteId], references: [id])
+  plano              Plano          @relation(fields: [planoId], references: [id])
+
+  boletos            Boleto[]
+  suportes           Suporte[]
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@map("pontoConexao")
+}
+
+model Plano {
+  id            Int      @id @default(autoincrement())
+  nome          String   @unique
+  uploadMB      Int      // ex: 50, 100, 250
+  downloadMB    Int      // ex: 50, 100, 250
+  valor         Decimal  @db.Decimal(10,2)
+  descricao     String?
+
+  pontosConexao PontoConexao[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("plano")
+}
+
+
+model Boleto {
+  id               Int           @id @default(autoincrement())
+  valor            Decimal       @db.Decimal(10,2)
+  dataVencimento   DateTime
+  dataPagamento    DateTime?
+  status           BoletoStatus  @default(PENDENTE)
+  linkBoleto       String?
+
+  pontoConexaoId   Int
+  pontoConexao     PontoConexao  @relation(fields: [pontoConexaoId], references: [id])
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  @@map("boleto")
+}
+
+model Suporte {
+  id               Int            @id @default(autoincrement())
+  assunto          String
+  descricao        String
+  status           SuporteStatus  @default(ABERTO)
+
+  pontoConexaoId   Int            
+  pontoConexao     PontoConexao   @relation(fields: [pontoConexaoId], references: [id])
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("suporte")
+}
