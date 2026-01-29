@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", planController.getAllPlan);
 router.post("/", validate(createPlanSchema), planController.createPlan);
-router.put("/", validate(updatePlanSchema), planController.updatePlan);
-router.delete("/", planController.deletePlan);
+router.put("/:nome", validate(updatePlanSchema), planController.updatePlan);
+router.delete("/:nome", planController.deletePlan);
 
 export default router;

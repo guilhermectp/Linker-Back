@@ -1,27 +1,26 @@
-import { IMikrotikPlan } from "../types/plan";
+import { TMikrotikPlan } from "../schema/plan.schema";
 import { useApi } from "./useApi";
 
 export const planIntegration = {
-  async createPlan(planData: IMikrotikPlan) {
-    console.log("Creating plan in MikroTik:", planData);
+  createPlan: async (planData: TMikrotikPlan) => {
     return await useApi("/ppp/profile", {
       method: "PUT",
       data: planData,
     });
   },
 
-  async getAllPlans() {
+  getAllPlans: async () => {
     return await useApi("/ppp/profile");
   },
 
-  async updatePlan(planData: IMikrotikPlan) {
-    return await useApi(`/ppp/profile/${planData.name}`, {
+  updatePlan: async (originalName: string, planData: TMikrotikPlan) => {
+    return await useApi(`/ppp/profile/${originalName}`, {
       method: "PATCH",
       data: planData,
     });
   },
 
-  async deletePlan(planName: string) {
+  deletePlan: async (planName: string) => {
     return await useApi(`/ppp/profile/${planName}`, {
       method: "DELETE",
     });

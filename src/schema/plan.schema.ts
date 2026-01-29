@@ -6,9 +6,8 @@ export const createPlanSchema = z.object({
       required_error: "Nome é obrigatório",
       invalid_type_error: "Nome deve ser uma string",
     })
-    .min(3, "Nome deve ter no mínimo 3 caracteres")
-    .max(50, "Nome deve ter no máximo 50 caracteres")
-    .trim(),
+    .trim()
+    .min(3, "Nome deve ter no mínimo 3 caracteres"),
 
   uploadMB: z
     .number({
@@ -38,11 +37,39 @@ export const createPlanSchema = z.object({
 });
 
 export const updatePlanSchema = z.object({
-  nome: z.string().min(3).max(50).trim(),
-  uploadMB: z.number().positive().max(10000).optional(),
-  downloadMB: z.number().positive().max(10000).optional(),
-  valor: z.number().positive().max(999999.99).optional(),
-  descricao: z.string().max(500).optional(),
+  nome: z
+    .string({
+      invalid_type_error: "Nome deve ser uma string",
+    })
+    .trim()
+    .min(3, "Nome deve ter no mínimo 3 caracteres")
+    .optional(),
+
+  uploadMB: z
+    .number({
+      invalid_type_error: "Upload deve ser um número",
+    })
+    .positive("Upload deve ser maior que 0")
+    .max(10000, "Upload não pode exceder 10000 MB")
+    .optional(),
+
+  downloadMB: z
+    .number({
+      invalid_type_error: "Download deve ser um número",
+    })
+    .positive("Download deve ser maior que 0")
+    .max(10000, "Download não pode exceder 10000 MB")
+    .optional(),
+
+  valor: z
+    .number({
+      invalid_type_error: "Valor deve ser um número",
+    })
+    .positive("Valor deve ser maior que 0")
+    .max(999999.99, "Valor muito alto")
+    .optional(),
+
+  descricao: z.string().max(500, "Descrição muito longa").optional(),
 });
 
 export const deletePlanSchema = z.object({

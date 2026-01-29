@@ -1,40 +1,54 @@
-// src/repository/plan.repository.ts
 import { prisma } from "../config/prisma";
-import { Plano } from "@prisma/client";
+import { Plano, Prisma } from "@prisma/client";
 import { TCreatePlanInput, TUpdatePlanInput } from "../schema/plan.schema";
 
 export const planRepository = {
-  async createPlan(data: TCreatePlanInput): Promise<Plano> {
-    return await prisma.plano.create({
-      data: {
-        nome: data.nome,
-        uploadMB: data.uploadMB,
-        downloadMB: data.downloadMB,
-        valor: data.valor,
-        descricao: data.descricao,
-      },
-    });
-  },
-
-  async getAllPlan(): Promise<Plano[]> {
+  getAllPlan: async (): Promise<Plano[]> => {
     return await prisma.plano.findMany();
   },
 
-  async getPlanByName(nome: string): Promise<Plano | null> {
+  getPlanByName: async (nome: string): Promise<Plano | null> => {
     return await prisma.plano.findUnique({
       where: { nome },
     });
   },
 
-  async updatePlan(data: TUpdatePlanInput): Promise<Plano> {
-    return await prisma.plano.update({
-      where: { nome: data.nome },
+  createPlan: async (data: TCreatePlanInput): Promise<Plano> => {
+    return await prisma.plano.create({
       data: {
+        nome: data.nome,
         uploadMB: data.uploadMB,
         downloadMB: data.downloadMB,
-        valor: data.valor,
+        valor: new Prisma.Decimal(data.valor),
         descricao: data.descricao,
       },
+    });
+  },
+
+  countUsage: async (planoId: string): Promise<number> => {
+    return await prisma.pontoConexao.count({
+      where: { planoId },
+    });
+  },
+
+  updatePlan: async (
+    originalName: string,
+    data: TUpdatePlanInput,
+  ): Promise<Plano> => {
+    const updateData: any = {};
+
+    if (data.nome !== undefined) updateData.nome = data.nome;
+    if (data.uploadMB !== undefined) updateData.uploadMB = data.uploadMB;
+    if (data.downloadMB !== undefined) updateData.downloadMB = data.downloadMB;
+    if (data.descricao !== undefined) updateData.descricao = data.descricao;
+
+    if (data.valor !== undefined) {
+      updateData.valor = new Prisma.Decimal(data.valor);
+    }
+
+    return await prisma.plano.update({
+      where: { nome: originalName },
+      data: updateData,
     });
   },
 

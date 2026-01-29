@@ -2,6 +2,7 @@ import axios, { AxiosRequestConfig } from "axios";
 
 const mkClient = axios.create({
   baseURL: "http://192.168.0.200/rest",
+  timeout: 5000,
   auth: {
     username: "admin",
     password: "",
@@ -21,21 +22,8 @@ export const useApi = async (
       ...options,
     });
 
-    return { data: response.data, error: null };
-  } catch (error: any) {
-    const status = error?.response?.status;
-    const statusText = error?.response?.statusText;
-    const message =
-      error?.response?.data?.message || error?.message || "Erro desconhecido";
-
-    return {
-      data: null,
-      error: {
-        status,
-        statusText,
-        message,
-        raw: error,
-      },
-    };
+    return response.data;
+  } catch (error) {
+    throw error;
   }
 };

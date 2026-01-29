@@ -5,74 +5,116 @@ import {
   TMikrotikPlan,
   TUpdatePlanInput,
 } from "../schema/plan.schema";
+import {
+  ServiceResponseType,
+  TServiceResponse,
+} from "../utils/service-response";
 
 const convertToKbps = (value: number): string => {
   return `${value * 1024}k`;
 };
 
 export const planService = {
-  async getAllPlan() {
-    return await planRepository.getAllPlan();
+  getAllPlan: async () => {
+    const plans = await planRepository.getAllPlan();
+
+    if (plans.length === 0) {
+      return {
+        type: ServiceResponseType.NOT_FOUND,
+        error: "Nenhum plano encontrado.",
+      };
+    }
+
+    return { type: ServiceResponseType.SUCCESS, data: plans };
   },
 
-  async createPlan(planData: TCreatePlanInput) {
+  createPlan: async (planData: TCreatePlanInput) => {
+    const exists = await planRepository.getPlanByName(planData.nome);
+    if (exists)
+      return {
+        type: ServiceResponseType.CONFLICT,
+        error: "Este plano já existe.",
+      };
+
     const mkPlan: TMikrotikPlan = {
       name: planData.nome,
       "rate-limit": `${convertToKbps(planData.uploadMB)}/${convertToKbps(planData.downloadMB)}`,
       comment: planData.descricao,
     };
 
-    const { error: mkError } = await planIntegration.createPlan(mkPlan);
-    if (mkError) return { data: null, error: mkError };
-
     try {
+      await planIntegration.createPlan(mkPlan);
       const dbData = await planRepository.createPlan(planData);
-      return { data: dbData, error: null };
-    } catch (dbError) {
+      return { type: ServiceResponseType.CREATED, data: dbData };
+    } catch (error) {
       await planIntegration.deletePlan(planData.nome);
-      return {
-        data: null,
-        error: "Erro no banco, MikroTik revertido.",
-      };
+      throw error;
     }
   },
 
-  async updatePlan(planData: TUpdatePlanInput) {
-    const currentPlan = await planRepository.getPlanByName(planData.nome);
-
-    if (!currentPlan) {
-      return { data: null, error: { message: "Plano não encontrado." } };
-    }
-
-    const updatedData: TCreatePlanInput = {
-      nome: planData.nome,
-      uploadMB: planData.uploadMB ?? currentPlan.uploadMB,
-      downloadMB: planData.downloadMB ?? currentPlan.downloadMB,
-      valor: planData.valor ?? Number(currentPlan.valor),
-      descricao: planData.descricao ?? currentPlan.descricao ?? undefined,
-    };
-
-    const mkPlan: TMikrotikPlan = {
-      name: updatedData.nome,
-      "rate-limit": `${convertToKbps(updatedData.uploadMB)}/${convertToKbps(updatedData.downloadMB)}`,
-      comment: updatedData.descricao,
-    };
-
-    const { error: mkError } = await planIntegration.updatePlan(mkPlan);
-    if (mkError) return { data: null, error: mkError };
+  updatePlan: async (originalName: string, planData: TUpdatePlanInput) => {
+    let originalPlan = undefined;
 
     try {
-      const dbData = await planRepository.updatePlan(updatedData);
-      return { data: dbData, error: null };
-    } catch (dbError) {
-      return {
-        data: null,
-        error: "Erro no banco, MikroTik não revertido.",
+      const currentPlan = await planRepository.getPlanByName(originalName);
+      if (!currentPlan)
+        return {
+          type: ServiceResponseType.NOT_FOUND,
+          error: "Plano não encontrado.",
+        };
+
+      originalPlan = { ...currentPlan };
+
+      const updatedData: TCreatePlanInput = {
+        nome: planData.nome ?? currentPlan.nome,
+        uploadMB: planData.uploadMB ?? currentPlan.uploadMB,
+        downloadMB: planData.downloadMB ?? currentPlan.downloadMB,
+        valor: planData.valor ?? Number(currentPlan.valor),
+        descricao: planData.descricao ?? currentPlan.descricao ?? undefined,
       };
+
+      const mkPlan: TMikrotikPlan = {
+        name: updatedData.nome,
+        "rate-limit": `${convertToKbps(updatedData.uploadMB)}/${convertToKbps(updatedData.downloadMB)}`,
+        comment: updatedData.descricao,
+      };
+
+      await planIntegration.updatePlan(originalPlan.nome, mkPlan);
+      const dbData = await planRepository.updatePlan(
+        originalPlan.nome,
+        updatedData,
+      );
+      return { type: ServiceResponseType.SUCCESS, data: dbData };
+    } catch (error) {
+      throw error;
     }
   },
 
-  async deletePlan(planName: string) {
-    return await planRepository.deletePlan(planName);
+  deletePlan: async (planName: string): Promise<TServiceResponse> => {
+    try {
+      const plan = await planRepository.getPlanByName(planName);
+      if (!plan)
+        return {
+          type: ServiceResponseType.NOT_FOUND,
+          error: "Plano não existe.",
+        };
+
+      const usage = await planRepository.countUsage(plan.id);
+      if (usage > 0)
+        return {
+          type: ServiceResponseType.CONFLICT,
+          error: "Plano em uso por clientes ativos.",
+        };
+
+      await planIntegration.deletePlan(planName);
+      await planRepository.deletePlan(planName);
+
+      return {
+        type: ServiceResponseType.SUCCESS,
+        data: "Deletado com sucesso.",
+      };
+    } catch (error) {
+      throw error;
+    }
   },
 };

@@ -13,13 +13,14 @@ datasource db {
 
 enum ClienteStatus {
   ATIVO
-  CANCELADO
+  DESATIVADO
 }
 
-enum PlanoStatus {
+enum ConexaoStatus {
   ATIVO
   REDUZIDO
   BLOQUEADO
+  CANCELADO
 }
 
 enum BoletoStatus {
@@ -30,7 +31,7 @@ enum BoletoStatus {
 }
 
 enum SuporteStatus {
-  ABERTO
+  EM_ABERTO
   EM_ANDAMENTO
   CANCELADO
   FINALIZADO
@@ -41,7 +42,7 @@ enum SuporteStatus {
 //////////////////////
 
 model Cliente {
-  id               Int              @id @default(autoincrement())
+  id               String @id @default(uuid())
   cpf              String           @unique
   nome             String
   email            String?          @unique
@@ -50,6 +51,7 @@ model Cliente {
   status           ClienteStatus    @default(ATIVO)
 
   pontosConexao    PontoConexao[]
+  boletos          Boleto[]
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -59,26 +61,31 @@ model Cliente {
 
 
 model PontoConexao {
-  id                 Int            @id @default(autoincrement())
-  status             PlanoStatus    @default(ATIVO)
+  id                 String @id @default(uuid())
+  status             ConexaoStatus    @default(ATIVO)
   diaVencimento     Int            // dia do mês (ex: 10)
   dataUltimoPagamento DateTime?
 
   loginMk            String         @unique
   senhaMk            String
 
-  cep                String
-  cidade             String
-  bairro             String
-  rua                String
-  numero             String
-  complemento        String?
+  tipoEndereco       String
   latitude           Float?
   longitude          Float?
+  complemento        String?
+  // urbano
+  cep                String?
+  cidade             String?
+  bairro             String?
+  rua                String?
+  numero             String?
+  //rural
+  cidadeRefencia     String?
+  nomeLocal          String?
 
 
-  clienteId          Int
-  planoId            Int
+  clienteId          String
+  planoId            String
 
   cliente            Cliente        @relation(fields: [clienteId], references: [id])
   plano              Plano          @relation(fields: [planoId], references: [id])
@@ -93,7 +100,7 @@ model PontoConexao {
 }
 
 model Plano {
-  id            Int      @id @default(autoincrement())
+  id            String @id @default(uuid())
   nome          String   @unique
   uploadMB      Int      // ex: 50, 100, 250
   downloadMB    Int      // ex: 50, 100, 250
@@ -110,14 +117,17 @@ model Plano {
 
 
 model Boleto {
-  id               Int           @id @default(autoincrement())
+  id               String @id @default(uuid())
   valor            Decimal       @db.Decimal(10,2)
   dataVencimento   DateTime
   dataPagamento    DateTime?
   status           BoletoStatus  @default(PENDENTE)
   linkBoleto       String?
 
-  pontoConexaoId   Int
+  clienteId        String
+  pontoConexaoId   String
+
+  cliente          Cliente       @relation(fields: [clienteId], references: [id])
   pontoConexao     PontoConexao  @relation(fields: [pontoConexaoId], references: [id])
 
   createdAt        DateTime      @default(now())
@@ -126,12 +136,12 @@ model Boleto {
 }
 
 model Suporte {
-  id               Int            @id @default(autoincrement())
+  id               String @id @default(uuid())
   assunto          String
   descricao        String
-  status           SuporteStatus  @default(ABERTO)
+  status           SuporteStatus  @default(EM_ABERTO)
 
-  pontoConexaoId   Int            
+  pontoConexaoId   String            
   pontoConexao     PontoConexao   @relation(fields: [pontoConexaoId], references: [id])
 
   createdAt        DateTime       @default(now())
