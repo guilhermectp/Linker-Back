@@ -12,6 +12,17 @@ export const clientController = {
     return res.status(result.statusCode).json(result.data);
   }),
 
+  getById: asyncHandler(async (req: Request, res: Response) => {
+    const { idCliente } = req.params;
+
+    const result = await clientService.getById(idCliente as string);
+
+    if (!result.success)
+      return res.status(result.statusCode).json(result.error);
+
+    return res.status(result.statusCode).json(result.data);
+  }),
+
   createClient: asyncHandler(async (req: Request, res: Response) => {
     const result = await clientService.createClient(req.body);
 

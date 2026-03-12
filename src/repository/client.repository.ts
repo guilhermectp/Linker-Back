@@ -2,25 +2,33 @@ import { Cliente } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import {
   TCreateClient,
-  TUpdateClientConnectionPointAddress,
   TUpdateClientConnectionPointPlan,
   TUpdateClientPersonalInfo,
 } from "../schema/client.schema";
 
 export const clientRepository = {
-  getAllClient: async (): Promise<Cliente[]> => {
-    return await prisma.cliente.findMany();
-  },
-
-  getClientById: async (id: string): Promise<Cliente | null> => {
-    return await prisma.cliente.findUnique({
-      where: { id },
+  getAllClient: async () => {
+    return await prisma.cliente.findMany({
+      include: {
+        pontosConexao: {
+          include: {
+            plano: true,
+          },
+        },
+      },
     });
   },
 
-  getByLoginMk: async (loginMk: string) => {
-    return await prisma.pontoConexao.findUnique({
-      where: { loginMk },
+  getClientById: async (id: string) => {
+    return await prisma.cliente.findUnique({
+      where: { id },
+      include: {
+        pontosConexao: {
+          include: {
+            plano: true,
+          },
+        },
+      },
     });
   },
 

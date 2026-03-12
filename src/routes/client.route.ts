@@ -11,6 +11,8 @@ const clientRouter = express.Router();
 
 clientRouter.get("/", clientController.getAllClient);
 
+clientRouter.get("/:idCliente", clientController.getById);
+
 clientRouter.post(
   "/",
   validate(createClientSchema),

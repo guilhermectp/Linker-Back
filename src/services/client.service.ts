@@ -13,6 +13,9 @@ import {
 } from "../utils/service-response";
 import { prisma } from "../config/prisma";
 import { clientIntegration } from "../integration/client.integration";
+import { TClienteStatus, TGetCliente } from "../types/client";
+import { TPontoConexaoStatus } from "../types/connectionPoint";
+import { connectionPointRepository } from "../repository/connectionPoint.repository";
 
 export const clientService = {
   getAllClient: async () => {
@@ -24,7 +27,111 @@ export const clientService = {
         "Nenhum cliente encontrado.",
       );
 
-    return serviceSuccess(clients);
+    const mapped: TGetCliente[] = clients.map((cliente) => ({
+      id: cliente.id,
+      nome: cliente.nome,
+      cpf: cliente.cpf,
+      email: cliente.email ?? "",
+      telefone: cliente.telefone,
+      status: cliente.status as TClienteStatus,
+      pontos: cliente.pontosConexao.map((ponto) => ({
+        id: ponto.id,
+        status: ponto.status as TPontoConexaoStatus,
+        diaVencimento: ponto.diaVencimento,
+        diaUltimoPagamento: ponto.dataUltimoPagamento?.toISOString() ?? "",
+        loginMK: ponto.loginMk,
+        senhaMK: ponto.senhaMk,
+        plano: {
+          id: ponto.plano.id,
+          nome: ponto.plano.nome,
+          uploadMB: ponto.plano.uploadMB,
+          downloadMB: ponto.plano.downloadMB,
+          valor: Number(ponto.plano.valor),
+          descricao: ponto.plano.descricao ?? undefined,
+        },
+        endereco:
+          ponto.tipoEndereco === "URBANO"
+            ? {
+                tipoEndereco: "URBANO" as const,
+                cep: ponto.cep ?? "",
+                cidade: ponto.cidade ?? "",
+                bairro: ponto.bairro ?? "",
+                rua: ponto.rua ?? "",
+                numero: Number(ponto.numero),
+                complemento: ponto.complemento ?? undefined,
+                latitude: ponto.latitude ?? undefined,
+                longitude: ponto.longitude ?? undefined,
+              }
+            : {
+                tipoEndereco: "RURAL" as const,
+                nomeLocal: ponto.nomeLocal ?? "",
+                cidadeReferencia: ponto.cidadeRefencia ?? "",
+                complemento: ponto.complemento ?? undefined,
+                latitude: ponto.latitude ?? undefined,
+                longitude: ponto.longitude ?? undefined,
+              },
+      })),
+    }));
+
+    return serviceSuccess(mapped);
+  },
+
+  getById: async (id: string) => {
+    const client = await clientRepository.getClientById(id);
+
+    if (!client)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Cliente não encontrado encontrado.",
+      );
+
+    const mapped: TGetCliente = {
+      id: client.id,
+      nome: client.nome,
+      cpf: client.cpf,
+      email: client.email ?? "",
+      telefone: client.telefone,
+      status: client.status as TClienteStatus,
+      pontos: client.pontosConexao.map((ponto) => ({
+        id: ponto.id,
+        status: ponto.status as TPontoConexaoStatus,
+        diaVencimento: ponto.diaVencimento,
+        diaUltimoPagamento: ponto.dataUltimoPagamento?.toISOString() ?? "",
+        loginMK: ponto.loginMk,
+        senhaMK: ponto.senhaMk,
+        plano: {
+          id: ponto.plano.id,
+          nome: ponto.plano.nome,
+          uploadMB: ponto.plano.uploadMB,
+          downloadMB: ponto.plano.downloadMB,
+          valor: Number(ponto.plano.valor),
+          descricao: ponto.plano.descricao ?? undefined,
+        },
+        endereco:
+          ponto.tipoEndereco === "URBANO"
+            ? {
+                tipoEndereco: "URBANO" as const,
+                cep: ponto.cep ?? "",
+                cidade: ponto.cidade ?? "",
+                bairro: ponto.bairro ?? "",
+                rua: ponto.rua ?? "",
+                numero: Number(ponto.numero),
+                complemento: ponto.complemento ?? undefined,
+                latitude: ponto.latitude ?? undefined,
+                longitude: ponto.longitude ?? undefined,
+              }
+            : {
+                tipoEndereco: "RURAL" as const,
+                nomeLocal: ponto.nomeLocal ?? "",
+                cidadeReferencia: ponto.cidadeRefencia ?? "",
+                complemento: ponto.complemento ?? undefined,
+                latitude: ponto.latitude ?? undefined,
+                longitude: ponto.longitude ?? undefined,
+              },
+      })),
+    };
+
+    return serviceSuccess(mapped);
   },
 
   createClient: async (clientData: TCreateClient) => {
@@ -32,7 +139,7 @@ export const clientService = {
     if (clientExists)
       return serviceError(ServiceErrorCode.CONFLICT, "Este cliente já existe.");
 
-    const loginExists = await clientRepository.getByLoginMk(
+    const loginExists = await connectionPointRepository.getByLoginMk(
       clientData.ponto.loginMK,
     );
 
