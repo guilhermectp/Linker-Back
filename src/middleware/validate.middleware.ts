@@ -1,25 +1,23 @@
 import { Request, Response, NextFunction } from "express";
-import { AnyZodObject, ZodError } from "zod/v3";
+import { ServiceErrorCode } from "../utils/service-response";
+import * as z from "zod";
 
-export const validate = (schema: AnyZodObject) => {
+export const validate = (schema: z.ZodObject<any>) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await schema.parseAsync(req.body);
       next();
     } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          message: "Erro de validação",
-          errors: error.errors.map((err) => ({
-            field: err.path[err.path.length - 1],
-            message: err.message,
-          })),
+      if (error instanceof z.ZodError) {
+        return res.status(422).json({
+          code: ServiceErrorCode.UNPROCESSABLE,
+          message: error.issues.map((err) => err.message).join(", "),
         });
       }
 
       return res.status(500).json({
-        success: false,
-        error: { message: "Erro interno no servidor" },
+        code: ServiceErrorCode.INTERNAL_ERROR,
+        message: "Erro interno no servidor.",
       });
     }
   };

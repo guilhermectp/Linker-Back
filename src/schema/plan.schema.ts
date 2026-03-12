@@ -1,75 +1,44 @@
-import z from "zod/v3";
+import * as z from "zod";
 
 export const createPlanSchema = z.object({
-  nome: z
-    .string({
-      required_error: "Nome é obrigatório",
-      invalid_type_error: "Nome deve ser uma string",
-    })
-    .trim()
-    .min(3, "Nome deve ter no mínimo 3 caracteres"),
-
+  nome: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres"),
   uploadMB: z
-    .number({
-      required_error: "Upload é obrigatório",
-      invalid_type_error: "Upload deve ser um número",
-    })
+    .number()
     .positive("Upload deve ser maior que 0")
     .max(10000, "Upload não pode exceder 10000 MB"),
-
   downloadMB: z
-    .number({
-      required_error: "Download é obrigatório",
-      invalid_type_error: "Download deve ser um número",
-    })
+    .number()
     .positive("Download deve ser maior que 0")
     .max(10000, "Download não pode exceder 10000 MB"),
-
   valor: z
-    .number({
-      required_error: "Valor é obrigatório",
-      invalid_type_error: "Valor deve ser um número",
-    })
+    .number()
     .positive("Valor deve ser maior que 0")
     .max(999999.99, "Valor muito alto"),
-
-  descricao: z.string().max(500, "Descrição muito longa").optional(),
+  descricao: z.string().max(100, "Descrição muito longa").optional(),
 });
 
 export const updatePlanSchema = z.object({
   nome: z
-    .string({
-      invalid_type_error: "Nome deve ser uma string",
-    })
+    .string()
     .trim()
     .min(3, "Nome deve ter no mínimo 3 caracteres")
     .optional(),
-
   uploadMB: z
-    .number({
-      invalid_type_error: "Upload deve ser um número",
-    })
+    .number()
     .positive("Upload deve ser maior que 0")
     .max(10000, "Upload não pode exceder 10000 MB")
     .optional(),
-
   downloadMB: z
-    .number({
-      invalid_type_error: "Download deve ser um número",
-    })
+    .number()
     .positive("Download deve ser maior que 0")
     .max(10000, "Download não pode exceder 10000 MB")
     .optional(),
-
   valor: z
-    .number({
-      invalid_type_error: "Valor deve ser um número",
-    })
+    .number()
     .positive("Valor deve ser maior que 0")
     .max(999999.99, "Valor muito alto")
     .optional(),
-
-  descricao: z.string().max(500, "Descrição muito longa").optional(),
+  descricao: z.string().max(100, "Descrição muito longa").optional(),
 });
 
 export const deletePlanSchema = z.object({

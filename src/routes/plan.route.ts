@@ -3,11 +3,11 @@ import express from "express";
 import { validate } from "../middleware/validate.middleware";
 import { createPlanSchema, updatePlanSchema } from "../schema/plan.schema";
 
-const router = express.Router();
+const planRouter = express.Router();
 
-router.get("/", planController.getAllPlan);
-router.post("/", validate(createPlanSchema), planController.createPlan);
-router.put("/:nome", validate(updatePlanSchema), planController.updatePlan);
-router.delete("/:nome", planController.deletePlan);
+planRouter.get("/", planController.getAllPlan);
+planRouter.post("/", validate(createPlanSchema), planController.createPlan);
+planRouter.put("/:nome", validate(updatePlanSchema), planController.updatePlan);
+planRouter.delete("/:nome", planController.deletePlan);
 
-export default router;
+export default planRouter;
