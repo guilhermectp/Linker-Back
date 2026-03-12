@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import planRouter from "./routes/plan.route";
+import clientRouter from "./routes/client.route";
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ app.use(
 );
 
 app.use("/planos", planRouter);
+app.use("/clientes", clientRouter);
 app.use("/", async (req, res) => {
   res.send("Server running index");
 });
