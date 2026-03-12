@@ -7,6 +7,12 @@ export const planRepository = {
     return await prisma.plano.findMany();
   },
 
+  getPlanById: async (id: string): Promise<Plano | null> => {
+    return await prisma.plano.findUnique({
+      where: { id },
+    });
+  },
+
   getPlanByName: async (nome: string): Promise<Plano | null> => {
     return await prisma.plano.findUnique({
       where: { nome },

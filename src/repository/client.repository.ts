@@ -18,6 +18,12 @@ export const clientRepository = {
     });
   },
 
+  getByLoginMk: async (loginMk: string) => {
+    return await prisma.pontoConexao.findUnique({
+      where: { loginMk },
+    });
+  },
+
   getClientByCpf: async (cpf: string): Promise<Cliente | null> => {
     return await prisma.cliente.findUnique({
       where: { cpf },
@@ -44,6 +50,12 @@ export const clientRepository = {
     return prisma.cliente.update({
       where: { id: connectionPointId },
       data,
+    });
+  },
+
+  deleteClientById: async (id: string) => {
+    return await prisma.cliente.delete({
+      where: { id },
     });
   },
 };

@@ -13,7 +13,8 @@ datasource db {
 
 enum ClienteStatus {
   ATIVO
-  DESATIVADO
+  INATIVO
+  SUSPENSO
 }
 
 enum ConexaoStatus {
@@ -23,18 +24,24 @@ enum ConexaoStatus {
   CANCELADO
 }
 
-enum BoletoStatus {
-  PAGO
-  PENDENTE
-  ATRASADO
-  CANCELADO
+enum OrdemServicoTipo {
+  INSTALACAO
+  SUPORTE
+  CANCELAMENTO
+  TROCA_ENDERECO
 }
 
-enum SuporteStatus {
-  EM_ABERTO
-  EM_ANDAMENTO
+enum OrdemServicoStatus {
+  AGENDADA
+  FINALIZADA
+  CANCELADA
+}
+
+enum BoletoStatus {
+  PENDENTE
+  PAGO
+  VENCIDO
   CANCELADO
-  FINALIZADO
 }
 
 //////////////////////
@@ -87,11 +94,11 @@ model PontoConexao {
   clienteId          String
   planoId            String
 
-  cliente            Cliente        @relation(fields: [clienteId], references: [id])
+  cliente            Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   plano              Plano          @relation(fields: [planoId], references: [id])
 
   boletos            Boleto[]
-  suportes           Suporte[]
+  ordensServico      OrdemServico[]
 
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
@@ -117,35 +124,32 @@ model Plano {
 
 
 model Boleto {
-  id               String @id @default(uuid())
-  valor            Decimal       @db.Decimal(10,2)
-  dataVencimento   DateTime
-  dataPagamento    DateTime?
-  status           BoletoStatus  @default(PENDENTE)
-  linkBoleto       String?
+  id             String       @id @default(uuid())
+  referente      String       // "Janeiro/2026"
+  valor          Decimal      @db.Decimal(10, 2)
+  dataVencimento DateTime
+  dataPagamento  DateTime?
+  status         BoletoStatus @default(PENDENTE)
+  linkBoleto     String?
+  clienteId      String
+  pontoConexaoId String
+  cliente        Cliente      @relation(fields: [clienteId], references: [id])
+  pontoConexao   PontoConexao @relation(fields: [pontoConexaoId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  clienteId        String
-  pontoConexaoId   String
-
-  cliente          Cliente       @relation(fields: [clienteId], references: [id])
-  pontoConexao     PontoConexao  @relation(fields: [pontoConexaoId], references: [id])
-
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
   @@map("boleto")
 }
+model OrdemServico {
+  id             String             @id @default(uuid())
+  tipo           OrdemServicoTipo
+  status         OrdemServicoStatus @default(AGENDADA)
+  dataAgendada   DateTime
+  observacao     String?
+  pontoConexaoId String
+  pontoConexao   PontoConexao       @relation(fields: [pontoConexaoId], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
-model Suporte {
-  id               String @id @default(uuid())
-  assunto          String
-  descricao        String
-  status           SuporteStatus  @default(EM_ABERTO)
-
-  pontoConexaoId   String            
-  pontoConexao     PontoConexao   @relation(fields: [pontoConexaoId], references: [id])
-
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  @@map("suporte")
+  @@map("ordemServico")
 }

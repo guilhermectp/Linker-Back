@@ -8,8 +8,8 @@ const urbanAddressSchema = z.object({
   rua: z.string().min(2, "Rua é obrigatório"),
   numero: z.number().int().positive("Número inválido"),
   complemento: z.string().optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 const ruralAddressSchema = z.object({
@@ -19,8 +19,8 @@ const ruralAddressSchema = z.object({
     .string()
     .min(2, "Referência de proximidade é obrigatório"),
   complemento: z.string().optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 const addressSchema = z.object({

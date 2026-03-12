@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
 
 const mkClient = axios.create({
-  baseURL: "http://192.168.0.200/rest",
+  baseURL: "http://192.168.15.2/rest",
   timeout: 5000,
   auth: {
     username: "admin",
