@@ -9,7 +9,7 @@ import clientRouter from "./routes/client.route";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -24,6 +24,12 @@ app.use("/planos", planRouter);
 app.use("/clientes", clientRouter);
 app.use("/", async (req, res) => {
   res.send("Server running index");
+});
+
+app.use((req, res) => {
+  res
+    .status(404)
+    .json({ message: `Rota ${req.method} ${req.path} não encontrada.` });
 });
 
 server.listen(port, () => {

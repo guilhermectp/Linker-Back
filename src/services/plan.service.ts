@@ -13,6 +13,12 @@ import {
 
 const convertToKbps = (value: number): string => `${value * 1024}k`;
 
+const buildMkPlan = (data: TCreatePlanInput): TMikrotikPlan => ({
+  name: data.nome,
+  "rate-limit": `${convertToKbps(data.uploadMB)}/${convertToKbps(data.downloadMB)}`,
+  comment: data.descricao,
+});
+
 export const planService = {
   getAllPlan: async () => {
     const plans = await planRepository.getAllPlan();
@@ -23,45 +29,51 @@ export const planService = {
         "Nenhum plano encontrado.",
       );
 
-    return serviceSuccess(plans);
+    const aux = plans.map((plan) => ({
+      ...plan,
+      valor: Number(plan.valor),
+    }));
+
+    return serviceSuccess(aux);
   },
 
   createPlan: async (planData: TCreatePlanInput) => {
     const exists = await planRepository.getPlanByName(planData.nome);
-
     if (exists)
       return serviceError(ServiceErrorCode.CONFLICT, "Este plano já existe.");
 
-    const mkPlan: TMikrotikPlan = {
-      name: planData.nome,
-      "rate-limit": `${convertToKbps(planData.uploadMB)}/${convertToKbps(planData.downloadMB)}`,
-      comment: planData.descricao,
-    };
+    let dbData;
+    try {
+      dbData = await planRepository.createPlan(planData);
+    } catch {
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao salvar plano no banco de dados.",
+      );
+    }
 
     try {
-      await planIntegration.createPlan(mkPlan);
-      const dbData = await planRepository.createPlan(planData);
-      return serviceSuccess(dbData, true); // 201
+      await planIntegration.createPlan(buildMkPlan(planData));
     } catch (error) {
-      await planIntegration.deletePlan(planData.nome).catch(() => null);
+      await planRepository.deletePlan(planData.nome).catch(() => null);
 
-      if (error instanceof Error && error.message.includes("timeout")) {
+      if (error instanceof Error && error.message.includes("timeout"))
         return serviceError(
           ServiceErrorCode.INTERNAL_ERROR,
-          "Servidor Mikrotik não respondeu. Tente novamente.",
+          "Servidor MikroTik não respondeu.",
         );
-      }
 
       return serviceError(
         ServiceErrorCode.INTERNAL_ERROR,
-        "Erro ao criar plano no Mikrotik.",
+        "Erro ao criar plano no MikroTik.",
       );
     }
+
+    return serviceSuccess(dbData, true);
   },
 
   updatePlan: async (originalName: string, planData: TUpdatePlanInput) => {
     const currentPlan = await planRepository.getPlanByName(originalName);
-
     if (!currentPlan)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
 
@@ -70,40 +82,97 @@ export const planService = {
       uploadMB: planData.uploadMB ?? currentPlan.uploadMB,
       downloadMB: planData.downloadMB ?? currentPlan.downloadMB,
       valor: planData.valor ?? Number(currentPlan.valor),
-      descricao: planData.descricao ?? currentPlan.descricao ?? undefined,
+      descricao: planData.descricao ?? currentPlan.descricao,
     };
 
-    const mkPlan: TMikrotikPlan = {
-      name: updatedData.nome,
-      "rate-limit": `${convertToKbps(updatedData.uploadMB)}/${convertToKbps(updatedData.downloadMB)}`,
-      comment: updatedData.descricao,
+    const rollbackData: TCreatePlanInput = {
+      nome: currentPlan.nome,
+      uploadMB: currentPlan.uploadMB,
+      downloadMB: currentPlan.downloadMB,
+      valor: Number(currentPlan.valor),
+      descricao: currentPlan.descricao,
     };
 
-    await planIntegration.updatePlan(currentPlan.nome, mkPlan);
-    const dbData = await planRepository.updatePlan(
-      currentPlan.nome,
-      updatedData,
-    );
+    let dbData;
+    try {
+      dbData = await planRepository.updatePlan(currentPlan.nome, updatedData);
+    } catch {
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao atualizar plano no banco de dados.",
+      );
+    }
+
+    try {
+      await planIntegration.updatePlan(
+        currentPlan.nome,
+        buildMkPlan(updatedData),
+      );
+    } catch (error) {
+      await planRepository
+        .updatePlan(updatedData.nome, rollbackData)
+        .catch(() => null);
+
+      if (error instanceof Error && error.message.includes("timeout"))
+        return serviceError(
+          ServiceErrorCode.INTERNAL_ERROR,
+          "Servidor MikroTik não respondeu.",
+        );
+
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao atualizar plano no MikroTik.",
+      );
+    }
 
     return serviceSuccess(dbData);
   },
 
   deletePlan: async (planName: string) => {
     const plan = await planRepository.getPlanByName(planName);
-
     if (!plan)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não existe.");
 
     const usage = await planRepository.countUsage(plan.id);
-
     if (usage > 0)
       return serviceError(
         ServiceErrorCode.CONFLICT,
         "Plano em uso por clientes ativos.",
       );
 
-    await planIntegration.deletePlan(planName);
-    await planRepository.deletePlan(planName);
+    try {
+      await planRepository.deletePlan(planName);
+    } catch {
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao deletar plano do banco de dados.",
+      );
+    }
+
+    try {
+      await planIntegration.deletePlan(planName);
+    } catch (error) {
+      await planRepository
+        .createPlan({
+          nome: plan.nome,
+          uploadMB: plan.uploadMB,
+          downloadMB: plan.downloadMB,
+          valor: Number(plan.valor),
+          descricao: plan.descricao,
+        })
+        .catch(() => null);
+
+      if (error instanceof Error && error.message.includes("timeout"))
+        return serviceError(
+          ServiceErrorCode.INTERNAL_ERROR,
+          "Servidor MikroTik não respondeu.",
+        );
+
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao deletar plano no MikroTik.",
+      );
+    }
 
     return serviceSuccess({ message: "Deletado com sucesso." });
   },

@@ -7,7 +7,11 @@ const planRouter = express.Router();
 
 planRouter.get("/", planController.getAllPlan);
 planRouter.post("/", validate(createPlanSchema), planController.createPlan);
-planRouter.put("/:nome", validate(updatePlanSchema), planController.updatePlan);
+planRouter.patch(
+  "/:nome",
+  validate(updatePlanSchema),
+  planController.updatePlan,
+);
 planRouter.delete("/:nome", planController.deletePlan);
 
 export default planRouter;

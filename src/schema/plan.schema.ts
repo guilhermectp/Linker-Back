@@ -1,44 +1,58 @@
 import * as z from "zod";
 
 export const createPlanSchema = z.object({
-  nome: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres"),
+  nome: z
+    .string("Nome do plano é obrigatório")
+    .trim()
+    .min(5, "Precisa ter ao menos 10 caracteres"),
   uploadMB: z
-    .number()
+    .number("Velocidade de Upload é obrigatório")
     .positive("Upload deve ser maior que 0")
     .max(10000, "Upload não pode exceder 10000 MB"),
   downloadMB: z
-    .number()
-    .positive("Download deve ser maior que 0")
-    .max(10000, "Download não pode exceder 10000 MB"),
+    .number("Velocidade de Download é obrigatório")
+    .positive("Upload deve ser maior que 0")
+    .max(10000, "Upload não pode exceder 10000 MB"),
+  descricao: z
+    .string()
+    .trim()
+    .max(100, "Descrição muito longa")
+    .nullish()
+    .transform((v) => (v === "" || v == null ? null : v)),
   valor: z
-    .number()
-    .positive("Valor deve ser maior que 0")
+    .number("Valor é obrigatório")
+    .min(0, "Precisa ser ao menos 0")
     .max(999999.99, "Valor muito alto"),
-  descricao: z.string().max(100, "Descrição muito longa").optional(),
 });
 
 export const updatePlanSchema = z.object({
   nome: z
-    .string()
+    .string("Nome do plano é obrigatório")
     .trim()
-    .min(3, "Nome deve ter no mínimo 3 caracteres")
+    .min(5, "Precisa ter ao menos 10 caracteres")
     .optional(),
   uploadMB: z
-    .number()
+    .number("Velocidade de Upload é obrigatório")
     .positive("Upload deve ser maior que 0")
     .max(10000, "Upload não pode exceder 10000 MB")
     .optional(),
   downloadMB: z
-    .number()
-    .positive("Download deve ser maior que 0")
-    .max(10000, "Download não pode exceder 10000 MB")
+    .number("Velocidade de Download é obrigatório")
+    .positive("Upload deve ser maior que 0")
+    .max(10000, "Upload não pode exceder 10000 MB")
+    .optional(),
+  descricao: z
+    .string()
+    .trim()
+    .max(100, "Descrição muito longa")
+    .nullish()
+    .transform((v) => (v === "" || v == null ? null : v))
     .optional(),
   valor: z
-    .number()
-    .positive("Valor deve ser maior que 0")
+    .number("Valor é obrigatório")
+    .min(0, "Precisa ser ao menos 0")
     .max(999999.99, "Valor muito alto")
     .optional(),
-  descricao: z.string().max(100, "Descrição muito longa").optional(),
 });
 
 export const deletePlanSchema = z.object({
@@ -52,5 +66,5 @@ export type TDeletePlanInput = z.infer<typeof deletePlanSchema>;
 export type TMikrotikPlan = {
   name: string;
   "rate-limit": string;
-  comment?: string;
+  comment?: string | null;
 };
