@@ -1,7 +1,11 @@
 import axios, { AxiosRequestConfig } from "axios";
+import dotenv from "dotenv";
+dotenv.config();
+
+const MICROTIK_IP = process.env.MICROTIK_IP;
 
 const mkClient = axios.create({
-  baseURL: "http://192.168.15.2/rest",
+  baseURL: `http://${MICROTIK_IP}/rest`,
   timeout: 5000,
   auth: {
     username: "admin",
