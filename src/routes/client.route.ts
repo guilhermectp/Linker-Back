@@ -3,8 +3,8 @@ import { clientController } from "../controllers/client.controller";
 import { validate } from "../middleware/validate.middleware";
 import {
   createClientSchema,
-  updateClientSchema,
-  updateConnectionPoint,
+  updatePersonalInfoSchema,
+  updateCustomerCentralPasswordSchema,
 } from "../schema/client.schema";
 
 const clientRouter = express.Router();
@@ -19,16 +19,22 @@ clientRouter.post(
   clientController.createClient,
 );
 
-clientRouter.put(
+clientRouter.patch(
   "/atualizar/:idCliente",
-  validate(updateClientSchema),
+  validate(updatePersonalInfoSchema),
   clientController.updatePersonalInfo,
 );
 
 clientRouter.put(
-  "/atualizar-ponto/:idCliente/:idPontoConexao",
-  validate(updateConnectionPoint),
-  clientController.updateConnectionPoint,
+  "/atualizar-senha/:idCliente",
+  validate(updateCustomerCentralPasswordSchema),
+  clientController.updateCustomerCentralPassword,
 );
+
+// clientRouter.put(
+//   "/atualizar-ponto/:idCliente/:idPontoConexao",
+//   validate(updateConnectionPoint),
+//   clientController.updateConnectionPoint,
+// );
 
 export default clientRouter;

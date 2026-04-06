@@ -1,10 +1,10 @@
+import bcrypt from "bcryptjs";
 import { planRepository } from "./../repository/plan.repository";
 import { clientRepository } from "./../repository/client.repository";
 import {
   TCreateClient,
-  TUpdateClientConnectionPointAddress,
-  TUpdateClientConnectionPointPlan,
   TUpdateClientPersonalInfo,
+  TUpdateCustomerCentralPassword,
 } from "../schema/client.schema";
 import {
   ServiceErrorCode,
@@ -16,6 +16,7 @@ import { clientIntegration } from "../integration/client.integration";
 import { TClienteStatus, TGetCliente } from "../types/client";
 import { TPontoConexaoStatus } from "../types/connectionPoint";
 import { connectionPointRepository } from "../repository/connectionPoint.repository";
+import { encrypt } from "../utils/encrypt-mk-password";
 
 export const clientService = {
   getAllClient: async () => {
@@ -40,7 +41,6 @@ export const clientService = {
         diaVencimento: ponto.diaVencimento,
         diaUltimoPagamento: ponto.dataUltimoPagamento?.toISOString() ?? "",
         loginMK: ponto.loginMk,
-        senhaMK: ponto.senhaMk,
         plano: {
           id: ponto.plano.id,
           nome: ponto.plano.nome,
@@ -98,7 +98,6 @@ export const clientService = {
         diaVencimento: ponto.diaVencimento,
         diaUltimoPagamento: ponto.dataUltimoPagamento?.toISOString() ?? "",
         loginMK: ponto.loginMk,
-        senhaMK: ponto.senhaMk,
         plano: {
           id: ponto.plano.id,
           nome: ponto.plano.nome,
@@ -154,6 +153,9 @@ export const clientService = {
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
 
     let createdData;
+    const hashed = await bcrypt.hash(clientData.senhaCentralCliente, 10);
+    const encryptedMk = encrypt(clientData.ponto.senhaMK);
+
     try {
       createdData = await prisma.$transaction(async (tx) => {
         const cliente = await tx.cliente.create({
@@ -162,7 +164,7 @@ export const clientService = {
             nome: clientData.nome,
             email: clientData.email,
             telefone: clientData.telefone,
-            senhaCentralCliente: clientData.senhaCentralCliente,
+            senhaCentralCliente: hashed,
           },
         });
 
@@ -173,7 +175,7 @@ export const clientService = {
             clienteId: cliente.id,
             planoId: clientData.ponto.planoId,
             loginMk: clientData.ponto.loginMK,
-            senhaMk: clientData.ponto.senhaMK,
+            senhaMk: encryptedMk,
             diaVencimento: clientData.ponto.diaVencimento,
             tipoEndereco: endereco.tipoEndereco,
             complemento: endereco.complemento,
@@ -230,6 +232,12 @@ export const clientService = {
   },
 
   updatePersonalInfo: async (id: string, data: TUpdateClientPersonalInfo) => {
+    if (Object.keys(data).length === 0)
+      return serviceError(
+        ServiceErrorCode.UNPROCESSABLE,
+        "Nenhum campo para atualizar.",
+      );
+
     const exists = await clientRepository.getClientById(id);
 
     if (!exists)
@@ -242,12 +250,17 @@ export const clientService = {
     return serviceSuccess(updated);
   },
 
-  updateConnectionPoint: async (
-    clientId: string,
-    connectionPointId: string,
-    data: TUpdateClientConnectionPointPlan,
+  updateCustomerCentralPassword: async (
+    id: string,
+    data: TUpdateCustomerCentralPassword,
   ) => {
-    const exists = await clientRepository.getClientById(clientId);
+    if (Object.keys(data).length === 0)
+      return serviceError(
+        ServiceErrorCode.UNPROCESSABLE,
+        "Nenhum campo para atualizar.",
+      );
+
+    const exists = await clientRepository.getClientById(id);
 
     if (!exists)
       return serviceError(
@@ -255,10 +268,33 @@ export const clientService = {
         "Cliente não encontrado.",
       );
 
-    const updated = await clientRepository.updateConnectionPoint(
-      connectionPointId,
-      data,
+    const hashed = await bcrypt.hash(data.senhaCentralCliente, 10);
+
+    const updated = await clientRepository.updateCustomerCentralPassword(
+      id,
+      hashed,
     );
-    return serviceSuccess(updated);
+
+    return serviceSuccess("Senha alterada com sucesso.");
   },
+
+  // updateConnectionPoint: async (
+  //   clientId: string,
+  //   connectionPointId: string,
+  //   data: TUpdateClientConnectionPointPlan,
+  // ) => {
+  //   const exists = await clientRepository.getClientById(clientId);
+
+  //   if (!exists)
+  //     return serviceError(
+  //       ServiceErrorCode.NOT_FOUND,
+  //       "Cliente não encontrado.",
+  //     );
+
+  //   const updated = await clientRepository.updateConnectionPoint(
+  //     connectionPointId,
+  //     data,
+  //   );
+  //   return serviceSuccess(updated);
+  // },
 };

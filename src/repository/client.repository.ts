@@ -4,6 +4,7 @@ import {
   TCreateClient,
   TUpdateClientConnectionPointPlan,
   TUpdateClientPersonalInfo,
+  TUpdateCustomerCentralPassword,
 } from "../schema/client.schema";
 
 export const clientRepository = {
@@ -51,15 +52,24 @@ export const clientRepository = {
     });
   },
 
-  updateConnectionPoint: async (
-    connectionPointId: string,
-    data: TUpdateClientConnectionPointPlan,
-  ) => {
+  updateCustomerCentralPassword: async (id: string, hashedPassword: string) => {
     return prisma.cliente.update({
-      where: { id: connectionPointId },
-      data,
+      where: { id },
+      data: {
+        senhaCentralCliente: hashedPassword,
+      },
     });
   },
+
+  // updateConnectionPoint: async (
+  //   connectionPointId: string,
+  //   data: TUpdateClientConnectionPointPlan,
+  // ) => {
+  //   return prisma.cliente.update({
+  //     where: { id: connectionPointId },
+  //     data,
+  //   });
+  // },
 
   deleteClientById: async (id: string) => {
     return await prisma.cliente.delete({

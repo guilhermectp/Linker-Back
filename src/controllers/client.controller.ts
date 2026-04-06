@@ -34,6 +34,7 @@ export const clientController = {
 
   updatePersonalInfo: asyncHandler(async (req: Request, res: Response) => {
     const { idCliente } = req.params;
+
     const result = await clientService.updatePersonalInfo(
       idCliente as string,
       req.body,
@@ -45,17 +46,33 @@ export const clientController = {
     return res.status(result.statusCode).json(result.data);
   }),
 
-  updateConnectionPoint: asyncHandler(async (req: Request, res: Response) => {
-    const { idCliente, idPontoConexao } = req.params;
-    const result = await clientService.updateConnectionPoint(
-      idCliente as string,
-      idPontoConexao as string,
-      req.body,
-    );
+  updateCustomerCentralPassword: asyncHandler(
+    async (req: Request, res: Response) => {
+      const { idCliente } = req.params;
 
-    if (!result.success)
-      return res.status(result.statusCode).json(result.error);
+      const result = await clientService.updateCustomerCentralPassword(
+        idCliente as string,
+        req.body,
+      );
 
-    return res.status(result.statusCode).json(result.data);
-  }),
+      if (!result.success)
+        return res.status(result.statusCode).json(result.error);
+
+      return res.status(result.statusCode).json(result.data);
+    },
+  ),
+
+  // updateConnectionPoint: asyncHandler(async (req: Request, res: Response) => {
+  //   const { idCliente, idPontoConexao } = req.params;
+  //   const result = await clientService.updateConnectionPoint(
+  //     idCliente as string,
+  //     idPontoConexao as string,
+  //     req.body,
+  //   );
+
+  //   if (!result.success)
+  //     return res.status(result.statusCode).json(result.error);
+
+  //   return res.status(result.statusCode).json(result.data);
+  // }),
 };

@@ -63,11 +63,19 @@ export const createClientSchema = z.object({
   }),
 });
 
-export const updateClientSchema = z.object({
-  nome: z.string().trim().min(2, "Nome é obrigatório"),
-  cpf: z.string().length(14, "O CPF deve ter 11 dígitos"),
-  email: z.email("E-mail inválido"),
-  telefone: z.string().length(15, "O telefone deve conter 10 dígitos"),
+export const updatePersonalInfoSchema = z.object({
+  nome: z.string().trim().min(2, "Nome é obrigatório").optional(),
+  email: z.email("E-mail inválido").optional(),
+  telefone: z
+    .string()
+    .length(15, "O telefone deve conter 10 dígitos")
+    .optional(),
+});
+
+export const updateCustomerCentralPasswordSchema = z.object({
+  senhaCentralCliente: z
+    .string()
+    .min(8, "A senha deve ter pelo menos 8 caracteres"),
 });
 
 export const updateConnectionPoint = z.object({
@@ -78,6 +86,11 @@ export const updateConnectionPoint = z.object({
 });
 
 export type TCreateClient = z.infer<typeof createClientSchema>;
-export type TUpdateClientPersonalInfo = z.infer<typeof infoSchema>;
+export type TUpdateClientPersonalInfo = z.infer<
+  typeof updatePersonalInfoSchema
+>;
+export type TUpdateCustomerCentralPassword = z.infer<
+  typeof updateCustomerCentralPasswordSchema
+>;
 export type TUpdateClientConnectionPointPlan = z.infer<typeof planSchema>;
 export type TUpdateClientConnectionPointAddress = z.infer<typeof addressSchema>;
