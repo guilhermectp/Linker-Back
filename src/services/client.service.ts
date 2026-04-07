@@ -10,7 +10,7 @@ import {
   ServiceErrorCode,
   serviceError,
   serviceSuccess,
-} from "../utils/service-response";
+} from "../utils/send-response";
 import { prisma } from "../config/prisma";
 import { clientIntegration } from "../integration/client.integration";
 import { TClienteStatus, TGetCliente } from "../types/client";
@@ -152,12 +152,12 @@ export const clientService = {
     if (!plano)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
 
-    let createdData;
+    let createdClient;
     const hashed = await bcrypt.hash(clientData.senhaCentralCliente, 10);
     const encryptedMk = encrypt(clientData.ponto.senhaMK);
 
     try {
-      createdData = await prisma.$transaction(async (tx) => {
+      createdClient = await prisma.$transaction(async (tx) => {
         const cliente = await tx.cliente.create({
           data: {
             cpf: clientData.cpf,
@@ -213,7 +213,7 @@ export const clientService = {
       });
     } catch (error) {
       await clientRepository
-        .deleteClientById(createdData.cliente.id)
+        .deleteClientById(createdClient.cliente.id)
         .catch(() => null);
 
       if (error instanceof Error && error.message.includes("timeout"))
@@ -228,7 +228,13 @@ export const clientService = {
       );
     }
 
-    return serviceSuccess({ message: "Cliente cadastrado com sucesso." }, true);
+    return serviceSuccess(
+      {
+        message: "Cliente cadastrado.",
+        cliente: createdClient,
+      },
+      true,
+    );
   },
 
   updatePersonalInfo: async (id: string, data: TUpdateClientPersonalInfo) => {
@@ -247,7 +253,11 @@ export const clientService = {
       );
 
     const updated = await clientRepository.updatePersonalInfo(id, data);
-    return serviceSuccess(updated);
+
+    return serviceSuccess({
+      message: "Cliente atualizado.",
+      cliente: updated,
+    });
   },
 
   updateCustomerCentralPassword: async (
@@ -270,12 +280,9 @@ export const clientService = {
 
     const hashed = await bcrypt.hash(data.senhaCentralCliente, 10);
 
-    const updated = await clientRepository.updateCustomerCentralPassword(
-      id,
-      hashed,
-    );
+    await clientRepository.updateCustomerCentralPassword(id, hashed);
 
-    return serviceSuccess("Senha alterada com sucesso.");
+    return serviceSuccess({ message: "Senha alterada com sucesso." });
   },
 
   // updateConnectionPoint: async (

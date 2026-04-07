@@ -1,64 +1,39 @@
 import { asyncHandler } from "../utils/async-handler";
 import { Request, Response } from "express";
 import { clientService } from "../services/client.service";
+import { sendResponse } from "../utils/send-response";
 
 export const clientController = {
   getAllClient: asyncHandler(async (req: Request, res: Response) => {
-    const result = await clientService.getAllClient();
-
-    if (!result.success)
-      return res.status(result.statusCode).json(result.error);
-
-    return res.status(result.statusCode).json(result.data);
+    sendResponse(res, await clientService.getAllClient());
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {
-    const { idCliente } = req.params;
-
-    const result = await clientService.getById(idCliente as string);
-
-    if (!result.success)
-      return res.status(result.statusCode).json(result.error);
-
-    return res.status(result.statusCode).json(result.data);
+    const clientId = req.params.idCliente as string;
+    sendResponse(res, await clientService.getById(clientId));
   }),
 
   createClient: asyncHandler(async (req: Request, res: Response) => {
-    const result = await clientService.createClient(req.body);
-
-    if (!result.success)
-      return res.status(result.statusCode).json(result.error);
-
-    return res.status(result.statusCode).json(result.data);
+    sendResponse(res, await clientService.createClient(req.body));
   }),
 
   updatePersonalInfo: asyncHandler(async (req: Request, res: Response) => {
-    const { idCliente } = req.params;
+    const clientId = req.params.idCliente as string;
 
-    const result = await clientService.updatePersonalInfo(
-      idCliente as string,
-      req.body,
+    sendResponse(
+      res,
+      await clientService.updatePersonalInfo(clientId, req.body),
     );
-
-    if (!result.success)
-      return res.status(result.statusCode).json(result.error);
-
-    return res.status(result.statusCode).json(result.data);
   }),
 
   updateCustomerCentralPassword: asyncHandler(
     async (req: Request, res: Response) => {
-      const { idCliente } = req.params;
+      const clientId = req.params.idCliente as string;
 
-      const result = await clientService.updateCustomerCentralPassword(
-        idCliente as string,
-        req.body,
+      sendResponse(
+        res,
+        await clientService.updateCustomerCentralPassword(clientId, req.body),
       );
-
-      if (!result.success)
-        return res.status(result.statusCode).json(result.error);
-
-      return res.status(result.statusCode).json(result.data);
     },
   ),
 

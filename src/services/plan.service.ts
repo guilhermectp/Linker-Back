@@ -6,10 +6,10 @@ import {
   TUpdatePlanInput,
 } from "../schema/plan.schema";
 import {
-  ServiceErrorCode,
   serviceError,
+  ServiceErrorCode,
   serviceSuccess,
-} from "../utils/service-response";
+} from "../utils/send-response";
 
 const convertToKbps = (value: number): string => `${value * 1024}k`;
 
@@ -29,12 +29,12 @@ export const planService = {
         "Nenhum plano encontrado.",
       );
 
-    const aux = plans.map((plan) => ({
+    const allPlans = plans.map((plan) => ({
       ...plan,
       valor: Number(plan.valor),
     }));
 
-    return serviceSuccess(aux);
+    return serviceSuccess(allPlans);
   },
 
   createPlan: async (planData: TCreatePlanInput) => {
@@ -69,7 +69,7 @@ export const planService = {
       );
     }
 
-    return serviceSuccess(dbData, true);
+    return serviceSuccess({ message: "Plano criado.", plano: dbData }, true);
   },
 
   updatePlan: async (originalName: string, planData: TUpdatePlanInput) => {
@@ -125,7 +125,7 @@ export const planService = {
       );
     }
 
-    return serviceSuccess(dbData);
+    return serviceSuccess({ message: "Plano atualizado.", plano: dbData });
   },
 
   deletePlan: async (planName: string) => {
@@ -174,6 +174,6 @@ export const planService = {
       );
     }
 
-    return serviceSuccess({ message: "Deletado com sucesso." });
+    return serviceSuccess({ message: "Plano deletado." });
   },
 };
