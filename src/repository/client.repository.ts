@@ -2,9 +2,7 @@ import { Cliente } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import {
   TCreateClient,
-  TUpdateClientConnectionPointPlan,
   TUpdateClientPersonalInfo,
-  TUpdateCustomerCentralPassword,
 } from "../schema/client.schema";
 
 export const clientRepository = {
@@ -60,16 +58,6 @@ export const clientRepository = {
       },
     });
   },
-
-  // updateConnectionPoint: async (
-  //   connectionPointId: string,
-  //   data: TUpdateClientConnectionPointPlan,
-  // ) => {
-  //   return prisma.cliente.update({
-  //     where: { id: connectionPointId },
-  //     data,
-  //   });
-  // },
 
   deleteClientById: async (id: string) => {
     return await prisma.cliente.delete({

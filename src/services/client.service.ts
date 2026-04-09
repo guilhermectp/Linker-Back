@@ -284,24 +284,4 @@ export const clientService = {
 
     return serviceSuccess({ message: "Senha alterada com sucesso." });
   },
-
-  // updateConnectionPoint: async (
-  //   clientId: string,
-  //   connectionPointId: string,
-  //   data: TUpdateClientConnectionPointPlan,
-  // ) => {
-  //   const exists = await clientRepository.getClientById(clientId);
-
-  //   if (!exists)
-  //     return serviceError(
-  //       ServiceErrorCode.NOT_FOUND,
-  //       "Cliente não encontrado.",
-  //     );
-
-  //   const updated = await clientRepository.updateConnectionPoint(
-  //     connectionPointId,
-  //     data,
-  //   );
-  //   return serviceSuccess(updated);
-  // },
 };
