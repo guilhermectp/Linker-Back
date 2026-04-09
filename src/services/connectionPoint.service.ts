@@ -83,7 +83,7 @@ export const connectionPointService = {
         );
 
       try {
-        await clientIntegration.updateUser(pontoAtual.loginMk, {
+        await clientIntegration.update(pontoAtual.loginMk, {
           profile: plano.nome,
         });
       } catch (error) {

@@ -6,7 +6,7 @@ import {
 } from "../schema/client.schema";
 
 export const clientRepository = {
-  getAllClient: async () => {
+  getAll: async () => {
     return await prisma.cliente.findMany({
       include: {
         pontosConexao: {
@@ -18,7 +18,7 @@ export const clientRepository = {
     });
   },
 
-  getClientById: async (id: string) => {
+  getById: async (id: string) => {
     return await prisma.cliente.findUnique({
       where: { id },
       include: {
@@ -37,7 +37,7 @@ export const clientRepository = {
     });
   },
 
-  createClient: async (data: TCreateClient): Promise<Cliente> => {
+  create: async (data: TCreateClient): Promise<Cliente> => {
     return await prisma.cliente.create({
       data,
     });
@@ -59,7 +59,7 @@ export const clientRepository = {
     });
   },
 
-  deleteClientById: async (id: string) => {
+  deleteById: async (id: string) => {
     return await prisma.cliente.delete({
       where: { id },
     });

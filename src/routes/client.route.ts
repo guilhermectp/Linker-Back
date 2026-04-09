@@ -9,15 +9,11 @@ import {
 
 const clientRouter = express.Router();
 
-clientRouter.get("/", clientController.getAllClient);
+clientRouter.get("/", clientController.getAll);
 
 clientRouter.get("/:idCliente", clientController.getById);
 
-clientRouter.post(
-  "/",
-  validate(createClientSchema),
-  clientController.createClient,
-);
+clientRouter.post("/", validate(createClientSchema), clientController.create);
 
 clientRouter.patch(
   "/atualizar/:idCliente",

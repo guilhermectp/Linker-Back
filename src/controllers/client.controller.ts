@@ -4,8 +4,8 @@ import { clientService } from "../services/client.service";
 import { sendResponse } from "../utils/send-response";
 
 export const clientController = {
-  getAllClient: asyncHandler(async (req: Request, res: Response) => {
-    sendResponse(res, await clientService.getAllClient());
+  getAll: asyncHandler(async (req: Request, res: Response) => {
+    sendResponse(res, await clientService.getAll());
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {
@@ -13,8 +13,8 @@ export const clientController = {
     sendResponse(res, await clientService.getById(clientId));
   }),
 
-  createClient: asyncHandler(async (req: Request, res: Response) => {
-    sendResponse(res, await clientService.createClient(req.body));
+  create: asyncHandler(async (req: Request, res: Response) => {
+    sendResponse(res, await clientService.create(req.body));
   }),
 
   updatePersonalInfo: asyncHandler(async (req: Request, res: Response) => {
@@ -36,18 +36,4 @@ export const clientController = {
       );
     },
   ),
-
-  // updateConnectionPoint: asyncHandler(async (req: Request, res: Response) => {
-  //   const { idCliente, idPontoConexao } = req.params;
-  //   const result = await clientService.updateConnectionPoint(
-  //     idCliente as string,
-  //     idPontoConexao as string,
-  //     req.body,
-  //   );
-
-  //   if (!result.success)
-  //     return res.status(result.statusCode).json(result.error);
-
-  //   return res.status(result.statusCode).json(result.data);
-  // }),
 };

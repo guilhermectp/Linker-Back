@@ -19,8 +19,8 @@ import { connectionPointRepository } from "../repository/connectionPoint.reposit
 import { encrypt } from "../utils/encrypt-mk-password";
 
 export const clientService = {
-  getAllClient: async () => {
-    const clients = await clientRepository.getAllClient();
+  getAll: async () => {
+    const clients = await clientRepository.getAll();
 
     if (clients.length === 0)
       return serviceError(
@@ -77,7 +77,7 @@ export const clientService = {
   },
 
   getById: async (id: string) => {
-    const client = await clientRepository.getClientById(id);
+    const client = await clientRepository.getById(id);
 
     if (!client)
       return serviceError(
@@ -133,7 +133,7 @@ export const clientService = {
     return serviceSuccess(mapped);
   },
 
-  createClient: async (clientData: TCreateClient) => {
+  create: async (clientData: TCreateClient) => {
     const clientExists = await clientRepository.getClientByCpf(clientData.cpf);
     if (clientExists)
       return serviceError(ServiceErrorCode.CONFLICT, "Este cliente já existe.");
@@ -205,7 +205,7 @@ export const clientService = {
     }
 
     try {
-      await clientIntegration.createUser({
+      await clientIntegration.create({
         name: clientData.ponto.loginMK,
         password: clientData.ponto.senhaMK,
         profile: plano.nome,
@@ -213,7 +213,7 @@ export const clientService = {
       });
     } catch (error) {
       await clientRepository
-        .deleteClientById(createdClient.cliente.id)
+        .deleteById(createdClient.cliente.id)
         .catch(() => null);
 
       if (error instanceof Error && error.message.includes("timeout"))
@@ -244,7 +244,7 @@ export const clientService = {
         "Nenhum campo para atualizar.",
       );
 
-    const exists = await clientRepository.getClientById(id);
+    const exists = await clientRepository.getById(id);
 
     if (!exists)
       return serviceError(
@@ -270,7 +270,7 @@ export const clientService = {
         "Nenhum campo para atualizar.",
       );
 
-    const exists = await clientRepository.getClientById(id);
+    const exists = await clientRepository.getById(id);
 
     if (!exists)
       return serviceError(
