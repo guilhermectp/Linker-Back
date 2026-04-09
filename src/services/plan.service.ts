@@ -20,8 +20,8 @@ const buildMkPlan = (data: TCreatePlanInput): TMikrotikPlan => ({
 });
 
 export const planService = {
-  getAllPlan: async () => {
-    const plans = await planRepository.getAllPlan();
+  getAll: async () => {
+    const plans = await planRepository.getAll();
 
     if (plans.length === 0)
       return serviceError(
@@ -37,14 +37,14 @@ export const planService = {
     return serviceSuccess(allPlans);
   },
 
-  createPlan: async (planData: TCreatePlanInput) => {
+  create: async (planData: TCreatePlanInput) => {
     const exists = await planRepository.getPlanByName(planData.nome);
     if (exists)
       return serviceError(ServiceErrorCode.CONFLICT, "Este plano já existe.");
 
     let dbData;
     try {
-      dbData = await planRepository.createPlan(planData);
+      dbData = await planRepository.create(planData);
     } catch {
       return serviceError(
         ServiceErrorCode.INTERNAL_ERROR,
@@ -53,9 +53,9 @@ export const planService = {
     }
 
     try {
-      await planIntegration.createPlan(buildMkPlan(planData));
+      await planIntegration.create(buildMkPlan(planData));
     } catch (error) {
-      await planRepository.deletePlan(planData.nome).catch(() => null);
+      await planRepository.delete(planData.nome).catch(() => null);
 
       if (error instanceof Error && error.message.includes("timeout"))
         return serviceError(
@@ -72,7 +72,7 @@ export const planService = {
     return serviceSuccess({ message: "Plano criado.", plano: dbData }, true);
   },
 
-  updatePlan: async (originalName: string, planData: TUpdatePlanInput) => {
+  update: async (originalName: string, planData: TUpdatePlanInput) => {
     const currentPlan = await planRepository.getPlanByName(originalName);
     if (!currentPlan)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
@@ -95,7 +95,7 @@ export const planService = {
 
     let dbData;
     try {
-      dbData = await planRepository.updatePlan(currentPlan.nome, updatedData);
+      dbData = await planRepository.update(currentPlan.nome, updatedData);
     } catch {
       return serviceError(
         ServiceErrorCode.INTERNAL_ERROR,
@@ -104,13 +104,10 @@ export const planService = {
     }
 
     try {
-      await planIntegration.updatePlan(
-        currentPlan.nome,
-        buildMkPlan(updatedData),
-      );
+      await planIntegration.update(currentPlan.nome, buildMkPlan(updatedData));
     } catch (error) {
       await planRepository
-        .updatePlan(updatedData.nome, rollbackData)
+        .update(updatedData.nome, rollbackData)
         .catch(() => null);
 
       if (error instanceof Error && error.message.includes("timeout"))
@@ -128,7 +125,7 @@ export const planService = {
     return serviceSuccess({ message: "Plano atualizado.", plano: dbData });
   },
 
-  deletePlan: async (planName: string) => {
+  delete: async (planName: string) => {
     const plan = await planRepository.getPlanByName(planName);
     if (!plan)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não existe.");
@@ -141,7 +138,7 @@ export const planService = {
       );
 
     try {
-      await planRepository.deletePlan(planName);
+      await planRepository.delete(planName);
     } catch {
       return serviceError(
         ServiceErrorCode.INTERNAL_ERROR,
@@ -150,10 +147,10 @@ export const planService = {
     }
 
     try {
-      await planIntegration.deletePlan(planName);
+      await planIntegration.delete(planName);
     } catch (error) {
       await planRepository
-        .createPlan({
+        .create({
           nome: plan.nome,
           uploadMB: plan.uploadMB,
           downloadMB: plan.downloadMB,

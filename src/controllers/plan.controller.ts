@@ -4,21 +4,21 @@ import { planService } from "../services/plan.service";
 import { sendResponse } from "../utils/send-response";
 
 export const planController = {
-  getAllPlan: asyncHandler(async (req: Request, res: Response) => {
-    sendResponse(res, await planService.getAllPlan());
+  getAll: asyncHandler(async (req: Request, res: Response) => {
+    sendResponse(res, await planService.getAll());
   }),
 
-  createPlan: asyncHandler(async (req: Request, res: Response) => {
-    sendResponse(res, await planService.createPlan(req.body));
+  create: asyncHandler(async (req: Request, res: Response) => {
+    sendResponse(res, await planService.create(req.body));
   }),
 
-  updatePlan: asyncHandler(async (req: Request, res: Response) => {
+  update: asyncHandler(async (req: Request, res: Response) => {
     const name = req.params.nome as string;
-    sendResponse(res, await planService.updatePlan(name, req.body));
+    sendResponse(res, await planService.update(name, req.body));
   }),
 
   deletePlan: asyncHandler(async (req: Request, res: Response) => {
     const name = req.params.nome as string;
-    sendResponse(res, await planService.deletePlan(name));
+    sendResponse(res, await planService.delete(name));
   }),
 };

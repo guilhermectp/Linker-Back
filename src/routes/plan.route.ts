@@ -5,13 +5,9 @@ import { createPlanSchema, updatePlanSchema } from "../schema/plan.schema";
 
 const planRouter = express.Router();
 
-planRouter.get("/", planController.getAllPlan);
-planRouter.post("/", validate(createPlanSchema), planController.createPlan);
-planRouter.patch(
-  "/:nome",
-  validate(updatePlanSchema),
-  planController.updatePlan,
-);
+planRouter.get("/", planController.getAll);
+planRouter.post("/", validate(createPlanSchema), planController.create);
+planRouter.patch("/:nome", validate(updatePlanSchema), planController.update);
 planRouter.delete("/:nome", planController.deletePlan);
 
 export default planRouter;

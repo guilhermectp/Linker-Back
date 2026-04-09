@@ -3,7 +3,7 @@ import { Plano, Prisma } from "@prisma/client";
 import { TCreatePlanInput, TUpdatePlanInput } from "../schema/plan.schema";
 
 export const planRepository = {
-  getAllPlan: async (): Promise<Plano[]> => {
+  getAll: async (): Promise<Plano[]> => {
     return await prisma.plano.findMany();
   },
 
@@ -19,7 +19,7 @@ export const planRepository = {
     });
   },
 
-  createPlan: async (data: TCreatePlanInput): Promise<Plano> => {
+  create: async (data: TCreatePlanInput): Promise<Plano> => {
     return await prisma.plano.create({
       data: {
         nome: data.nome,
@@ -37,7 +37,7 @@ export const planRepository = {
     });
   },
 
-  updatePlan: async (
+  update: async (
     originalName: string,
     data: TUpdatePlanInput,
   ): Promise<Plano> => {
@@ -58,7 +58,7 @@ export const planRepository = {
     });
   },
 
-  async deletePlan(planName: string): Promise<Plano> {
+  delete: async (planName: string): Promise<Plano> => {
     return await prisma.plano.delete({
       where: { nome: planName },
     });
