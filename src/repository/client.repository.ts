@@ -1,9 +1,6 @@
 import { Cliente } from "@prisma/client";
 import { prisma } from "../config/prisma";
-import {
-  TCreateClient,
-  TUpdateClientPersonalInfo,
-} from "../schema/client.schema";
+import { TClientCreate, TClientUpdateInfo } from "../schema/client.schema";
 
 export const clientRepository = {
   getAll: async () => {
@@ -37,13 +34,13 @@ export const clientRepository = {
     });
   },
 
-  create: async (data: TCreateClient): Promise<Cliente> => {
+  create: async (data: TClientCreate): Promise<Cliente> => {
     return await prisma.cliente.create({
       data,
     });
   },
 
-  updatePersonalInfo: async (id: string, data: TUpdateClientPersonalInfo) => {
+  updatePersonalInfo: async (id: string, data: TClientUpdateInfo) => {
     return prisma.cliente.update({
       where: { id },
       data,

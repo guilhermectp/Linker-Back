@@ -2,9 +2,9 @@ import bcrypt from "bcryptjs";
 import { planRepository } from "./../repository/plan.repository";
 import { clientRepository } from "./../repository/client.repository";
 import {
-  TCreateClient,
-  TUpdateClientPersonalInfo,
-  TUpdateCustomerCentralPassword,
+  TClientCreate,
+  TClientUpdateInfo,
+  TClientUpdatePassword,
 } from "../schema/client.schema";
 import {
   ServiceErrorCode,
@@ -133,13 +133,13 @@ export const clientService = {
     return serviceSuccess(mapped);
   },
 
-  create: async (clientData: TCreateClient) => {
+  create: async (clientData: TClientCreate) => {
     const clientExists = await clientRepository.getClientByCpf(clientData.cpf);
     if (clientExists)
       return serviceError(ServiceErrorCode.CONFLICT, "Este cliente já existe.");
 
     const loginExists = await connectionPointRepository.getByLoginMk(
-      clientData.ponto.loginMK,
+      clientData.microtik.loginMK,
     );
 
     if (loginExists)
@@ -148,13 +148,13 @@ export const clientService = {
         "Este login MikroTik já está em uso.",
       );
 
-    const plano = await planRepository.getPlanById(clientData.ponto.planoId);
+    const plano = await planRepository.getPlanById(clientData.plano.planoId);
     if (!plano)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
 
     let createdClient;
     const hashed = await bcrypt.hash(clientData.senhaCentralCliente, 10);
-    const encryptedMk = encrypt(clientData.ponto.senhaMK);
+    const encryptedMk = encrypt(clientData.microtik.senhaMK);
 
     try {
       createdClient = await prisma.$transaction(async (tx) => {
@@ -168,15 +168,15 @@ export const clientService = {
           },
         });
 
-        const endereco = clientData.ponto.endereco;
+        const endereco = clientData.endereco;
 
         const ponto = await tx.pontoConexao.create({
           data: {
             clienteId: cliente.id,
-            planoId: clientData.ponto.planoId,
-            loginMk: clientData.ponto.loginMK,
+            planoId: clientData.plano.planoId,
+            diaVencimento: clientData.plano.diaVencimento,
+            loginMk: clientData.microtik.loginMK,
             senhaMk: encryptedMk,
-            diaVencimento: clientData.ponto.diaVencimento,
             tipoEndereco: endereco.tipoEndereco,
             complemento: endereco.complemento,
             latitude: endereco.latitude ?? null,
@@ -206,8 +206,8 @@ export const clientService = {
 
     try {
       await clientIntegration.create({
-        name: clientData.ponto.loginMK,
-        password: clientData.ponto.senhaMK,
+        name: clientData.microtik.loginMK,
+        password: clientData.microtik.senhaMK,
         profile: plano.nome,
         service: "pppoe",
       });
@@ -237,7 +237,7 @@ export const clientService = {
     );
   },
 
-  updatePersonalInfo: async (id: string, data: TUpdateClientPersonalInfo) => {
+  updatePersonalInfo: async (id: string, data: TClientUpdateInfo) => {
     if (Object.keys(data).length === 0)
       return serviceError(
         ServiceErrorCode.UNPROCESSABLE,
@@ -262,7 +262,7 @@ export const clientService = {
 
   updateCustomerCentralPassword: async (
     id: string,
-    data: TUpdateCustomerCentralPassword,
+    data: TClientUpdatePassword,
   ) => {
     if (Object.keys(data).length === 0)
       return serviceError(
