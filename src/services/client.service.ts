@@ -170,7 +170,7 @@ export const clientService = {
 
         const endereco = clientData.endereco;
 
-        const ponto = await tx.pontoConexao.create({
+        await tx.pontoConexao.create({
           data: {
             clienteId: cliente.id,
             planoId: clientData.plano.planoId,
@@ -195,7 +195,7 @@ export const clientService = {
           },
         });
 
-        return { cliente, ponto };
+        return { clientId: cliente.id };
       });
     } catch (error) {
       return serviceError(
@@ -213,7 +213,7 @@ export const clientService = {
       });
     } catch (error) {
       await clientRepository
-        .deleteById(createdClient.cliente.id)
+        .deleteById(createdClient.clientId)
         .catch(() => null);
 
       if (error instanceof Error && error.message.includes("timeout"))
