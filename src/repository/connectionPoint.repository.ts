@@ -49,6 +49,7 @@ export const connectionPointRepository = {
       },
     });
   },
+
   updatePlan: async (
     connectionPointId: string,
     data: Partial<Pick<PontoConexao, "planoId" | "diaVencimento">>,
@@ -105,6 +106,12 @@ export const connectionPointRepository = {
           numero: null,
         }),
       },
+    });
+  },
+
+  delete: async (connectionPointId: string): Promise<PontoConexao> => {
+    return await prisma.pontoConexao.delete({
+      where: { id: connectionPointId },
     });
   },
 };

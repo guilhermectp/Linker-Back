@@ -30,6 +30,23 @@ export const connectionPointService = {
       ponto,
     );
 
+    try {
+      await clientIntegration.create({
+        name: connectionPoint.microtik.loginMK,
+        password: connectionPoint.microtik.senhaMK,
+        profile: (await planRepository.getPlanById(
+          connectionPoint.plano.planoId,
+        ))!.nome,
+        service: "pppoe",
+      });
+    } catch (error) {
+      await connectionPointRepository.delete(createdPonto.id);
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao criar usuário no MikroTik.",
+      );
+    }
+
     return serviceSuccess(
       {
         message: "Ponto de Conexão adicionado.",
@@ -91,6 +108,8 @@ export const connectionPointService = {
 
     if (planoNome) {
       try {
+        console.log(planoNome);
+        console.log(pontoAtual.loginMk);
         await clientIntegration.update(pontoAtual.loginMk, {
           profile: planoNome,
         });
@@ -244,6 +263,32 @@ export const connectionPointService = {
         ...connectionPoint,
         senhaMK: encryptedMk,
       },
+    });
+  },
+
+  delete: async (connectionPointId: string) => {
+    const pontoAtual =
+      await connectionPointRepository.getById(connectionPointId);
+
+    if (!pontoAtual)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Ponto de Conexão não encontrado.",
+      );
+
+    try {
+      await clientIntegration.delete(pontoAtual.loginMk);
+    } catch (error) {
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao remover usuário no MikroTik.",
+      );
+    }
+
+    await connectionPointRepository.delete(connectionPointId);
+
+    return serviceSuccess({
+      message: "Ponto de Conexão removido.",
     });
   },
 

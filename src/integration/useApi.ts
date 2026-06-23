@@ -6,7 +6,7 @@ const MICROTIK_IP = process.env.MICROTIK_IP;
 
 const mkClient = axios.create({
   baseURL: `http://${MICROTIK_IP}/rest`,
-  timeout: 5000,
+  timeout: 10000,
   auth: {
     username: "admin",
     password: "",
@@ -21,6 +21,7 @@ export const useApi = async (
   options: AxiosRequestConfig = {},
 ) => {
   try {
+    console.log(MICROTIK_IP);
     const response = await mkClient({
       url: path,
       ...options,
@@ -28,6 +29,7 @@ export const useApi = async (
 
     return response.data;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };

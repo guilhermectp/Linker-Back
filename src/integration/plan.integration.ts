@@ -13,15 +13,25 @@ export const planIntegration = {
     return await useApi("/ppp/profile");
   },
 
+  getIdByName: async (name: string): Promise<string> => {
+    const results = await useApi(`/ppp/profile?name=${name}`);
+    if (!results || results.length === 0) {
+      throw new Error(`Plano "${name}" não encontrado no MikroTik`);
+    }
+    return results[0][".id"];
+  },
+
   update: async (originalName: string, planData: TMikrotikPlan) => {
-    return await useApi(`/ppp/profile/${originalName}`, {
+    const id = await planIntegration.getIdByName(originalName);
+    return await useApi(`/ppp/profile/${id}`, {
       method: "PATCH",
       data: planData,
     });
   },
 
   delete: async (planName: string) => {
-    return await useApi(`/ppp/profile/${planName}`, {
+    const id = await planIntegration.getIdByName(planName);
+    return await useApi(`/ppp/profile/${id}`, {
       method: "DELETE",
     });
   },
