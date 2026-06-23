@@ -34,4 +34,9 @@ connectionPointRouter.patch(
   connectionPointController.updateAddress,
 );
 
+connectionPointRouter.delete(
+  "/:idPontoConexao",
+  connectionPointController.delete,
+);
+
 export default connectionPointRouter;

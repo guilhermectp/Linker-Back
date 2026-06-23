@@ -33,4 +33,9 @@ export const connectionPointController = {
       await connectionPointService.updateAddress(idPontoConexao, req.body),
     );
   }),
+
+  delete: asyncHandler(async (req: Request, res: Response) => {
+    const idPontoConexao = req.params.idPontoConexao as string;
+    sendResponse(res, await connectionPointService.delete(idPontoConexao));
+  }),
 };
