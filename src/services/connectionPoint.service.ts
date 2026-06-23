@@ -5,16 +5,19 @@ import {
 } from "../utils/send-response";
 import { connectionPointRepository } from "../repository/connectionPoint.repository";
 import { encrypt } from "../utils/encrypt-mk-password";
-import {
-  TCreateConnectionPoint,
-  TUpdateConnectionPoint,
-} from "../schema/pointConnection.schema";
+
 import { planRepository } from "../repository/plan.repository";
 import { TResPontoConexao } from "../types/connectionPoint";
 import { clientIntegration } from "../integration/client.integration";
+import {
+  TConnectionPointAddress,
+  TConnectionPointCreate,
+  TConnectionPointMicrotik,
+  TConnectionPointPlan,
+} from "../schema/connectionPoint.schema";
 
 export const connectionPointService = {
-  create: async (clientId: string, connectionPoint: TCreateConnectionPoint) => {
+  create: async (clientId: string, connectionPoint: TConnectionPointCreate) => {
     const built =
       await connectionPointService.buildConnectionPointData(connectionPoint);
 
@@ -32,14 +35,16 @@ export const connectionPointService = {
         message: "Ponto de Conexão adicionado.",
         ponto: {
           id: createdPonto.id,
-          status: createdPonto.status,
-          diaVencimento: createdPonto.diaVencimento,
-          dataUltimoPagamento: createdPonto.dataUltimoPagamento,
-          loginMk: createdPonto.loginMk,
           clienteId: createdPonto.clienteId,
-          planoId: createdPonto.planoId,
-          createdAt: createdPonto.createdAt,
-          updatedAt: createdPonto.updatedAt,
+          status: createdPonto.status,
+          plano: {
+            planoId: createdPonto.planoId,
+            diaVencimento: createdPonto.diaVencimento,
+            dataUltimoPagamento: createdPonto.dataUltimoPagamento,
+          },
+          microtik: {
+            loginMk: createdPonto.loginMk,
+          },
           endereco: connectionPointService.formatAddress(createdPonto),
         },
       },
@@ -47,18 +52,10 @@ export const connectionPointService = {
     );
   },
 
-  update: async (
+  updatePlan: async (
     connectionPointId: string,
-    data: Partial<TUpdateConnectionPoint>,
+    data: Partial<TConnectionPointPlan>,
   ) => {
-    if (!data.ponto || Object.keys(data.ponto).length === 0)
-      return serviceError(
-        ServiceErrorCode.UNPROCESSABLE,
-        "Nenhum campo para atualizar.",
-      );
-
-    const { ponto } = data;
-
     const pontoAtual =
       await connectionPointRepository.getById(connectionPointId);
 
@@ -68,32 +65,43 @@ export const connectionPointService = {
         "Ponto de Conexão não encontrado.",
       );
 
-    const updatedPonto = await connectionPointRepository.update(
-      connectionPointId,
-      ponto,
-    );
+    const { planoId, diaVencimento } = data;
 
-    if (ponto.planoId) {
-      const plano = await planRepository.getPlanById(ponto.planoId);
+    if (!planoId && !diaVencimento)
+      return serviceError(
+        ServiceErrorCode.BAD_REQUEST,
+        "Dados não foram enviados ou estão vazios.",
+      );
 
+    let planoNome: string | undefined;
+    if (planoId) {
+      const plano = await planRepository.getPlanById(planoId);
       if (!plano)
         return serviceError(
           ServiceErrorCode.NOT_FOUND,
           "Plano não encontrado.",
         );
+      planoNome = plano.nome;
+    }
 
+    const updatedPonto = await connectionPointRepository.updatePlan(
+      connectionPointId,
+      { planoId, diaVencimento },
+    );
+
+    if (planoNome) {
       try {
         await clientIntegration.update(pontoAtual.loginMk, {
-          profile: plano.nome,
+          profile: planoNome,
         });
       } catch (error) {
-        await connectionPointRepository.update(connectionPointId, {
+        await connectionPointRepository.updatePlan(connectionPointId, {
           planoId: pontoAtual.planoId,
+          diaVencimento: pontoAtual.diaVencimento,
         });
-
         return serviceError(
           ServiceErrorCode.INTERNAL_ERROR,
-          "Erro ao atualizar plano no MikroTik.",
+          "Erro ao atualizar no MikroTik.",
         );
       }
     }
@@ -102,22 +110,118 @@ export const connectionPointService = {
       message: "Ponto de Conexão atualizado.",
       ponto: {
         id: updatedPonto.id,
-        status: updatedPonto.status,
-        diaVencimento: updatedPonto.diaVencimento,
-        dataUltimoPagamento: updatedPonto.dataUltimoPagamento,
-        loginMk: updatedPonto.loginMk,
-        clienteId: updatedPonto.clienteId,
-        planoId: updatedPonto.planoId,
-        createdAt: updatedPonto.createdAt,
-        updatedAt: updatedPonto.updatedAt,
+        plano: {
+          planoId: updatedPonto.planoId,
+          diaVencimento: updatedPonto.diaVencimento,
+        },
+      },
+    });
+  },
+
+  updateMicrotik: async (
+    connectionPointId: string,
+    data: Partial<TConnectionPointMicrotik>,
+  ) => {
+    const pontoAtual =
+      await connectionPointRepository.getById(connectionPointId);
+
+    if (!pontoAtual)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Ponto de Conexão não encontrado.",
+      );
+
+    const { loginMK, senhaMK } = data;
+
+    if (!loginMK && !senhaMK)
+      return serviceError(
+        ServiceErrorCode.BAD_REQUEST,
+        "Dados não foram enviados ou estão vazios.",
+      );
+
+    if (loginMK) {
+      const pointExists = await connectionPointRepository.getByLoginMk(loginMK);
+      if (pointExists && pointExists.id !== connectionPointId)
+        return serviceError(
+          ServiceErrorCode.CONFLICT,
+          "Este login MikroTik já está em uso.",
+        );
+    }
+
+    const senhaMKPlain = senhaMK;
+    const encryptedSenha = senhaMK ? encrypt(senhaMK) : undefined;
+
+    const updatedPonto = await connectionPointRepository.updateMicrotik(
+      connectionPointId,
+      {
+        ...(loginMK && { loginMK }),
+        ...(encryptedSenha && { senhaMK: encryptedSenha }),
+      },
+    );
+
+    try {
+      await clientIntegration.update(pontoAtual.loginMk, {
+        ...(loginMK && { name: loginMK }),
+        ...(senhaMKPlain && { password: senhaMKPlain }),
+      });
+    } catch (error) {
+      await connectionPointRepository.updateMicrotik(connectionPointId, {
+        loginMK: pontoAtual.loginMk,
+        senhaMK: pontoAtual.senhaMk,
+      });
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao atualizar no MikroTik.",
+      );
+    }
+
+    return serviceSuccess({
+      message: "Ponto de Conexão atualizado.",
+      ponto: {
+        id: updatedPonto.id,
+        microtik: {
+          loginMk: updatedPonto.loginMk,
+        },
+      },
+    });
+  },
+
+  updateAddress: async (
+    connectionPointId: string,
+    data: Partial<TConnectionPointAddress>,
+  ) => {
+    const pontoAtual =
+      await connectionPointRepository.getById(connectionPointId);
+
+    if (!pontoAtual)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Ponto de Conexão não encontrado.",
+      );
+
+    if (!data || Object.keys(data).length === 0)
+      return serviceError(
+        ServiceErrorCode.BAD_REQUEST,
+        "Dados não foram enviados ou estão vazios.",
+      );
+
+    const updatedPonto = await connectionPointRepository.updateAddress(
+      connectionPointId,
+      data,
+    );
+
+    return serviceSuccess({
+      message: "Ponto de Conexão atualizado.",
+      ponto: {
+        id: updatedPonto.id,
         endereco: connectionPointService.formatAddress(updatedPonto),
       },
     });
   },
 
-  buildConnectionPointData: async (connectionPoint: TCreateConnectionPoint) => {
+  buildConnectionPointData: async (connectionPoint: TConnectionPointCreate) => {
     const loginExists = await connectionPointRepository.getByLoginMk(
-      connectionPoint.ponto.loginMK,
+      connectionPoint.microtik.loginMK,
     );
 
     if (loginExists)
@@ -127,17 +231,17 @@ export const connectionPointService = {
       );
 
     const plano = await planRepository.getPlanById(
-      connectionPoint.ponto.planoId,
+      connectionPoint.plano.planoId,
     );
 
     if (!plano)
       return serviceError(ServiceErrorCode.NOT_FOUND, "Plano não encontrado.");
 
-    const encryptedMk = encrypt(connectionPoint.ponto.senhaMK);
+    const encryptedMk = encrypt(connectionPoint.microtik.senhaMK);
 
     return serviceSuccess({
       ponto: {
-        ...connectionPoint.ponto,
+        ...connectionPoint,
         senhaMK: encryptedMk,
       },
     });

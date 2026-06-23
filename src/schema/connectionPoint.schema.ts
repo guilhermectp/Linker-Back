@@ -38,6 +38,20 @@ export const connectionPointMicrotikSchema = z.object({
   senhaMK: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
 });
 
+export const connectionPointUpdateMicrotikSchema = z.object({
+  loginMK: z
+    .string()
+    .trim()
+    .min(8, "O login deve ter pelo menos 8 caracteres")
+    .optional(),
+  senhaMK: z
+    .union([
+      z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+      z.literal(""),
+    ])
+    .optional(),
+});
+
 export const connectionPointFullSchema = z.object({
   plano: connectionPointPlanSchema,
   microtik: connectionPointMicrotikSchema,

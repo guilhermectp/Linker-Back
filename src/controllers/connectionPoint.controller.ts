@@ -10,11 +10,27 @@ export const connectionPointController = {
     sendResponse(res, await connectionPointService.create(idCliente, req.body));
   }),
 
-  update: asyncHandler(async (req: Request, res: Response) => {
+  updatePlan: asyncHandler(async (req: Request, res: Response) => {
     const idPontoConexao = req.params.idPontoConexao as string;
     sendResponse(
       res,
-      await connectionPointService.update(idPontoConexao, req.body),
+      await connectionPointService.updatePlan(idPontoConexao, req.body),
+    );
+  }),
+
+  updateMicrotik: asyncHandler(async (req: Request, res: Response) => {
+    const idPontoConexao = req.params.idPontoConexao as string;
+    sendResponse(
+      res,
+      await connectionPointService.updateMicrotik(idPontoConexao, req.body),
+    );
+  }),
+
+  updateAddress: asyncHandler(async (req: Request, res: Response) => {
+    const idPontoConexao = req.params.idPontoConexao as string;
+    sendResponse(
+      res,
+      await connectionPointService.updateAddress(idPontoConexao, req.body),
     );
   }),
 };

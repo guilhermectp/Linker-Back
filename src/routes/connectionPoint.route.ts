@@ -2,22 +2,36 @@ import express from "express";
 import { validate } from "../middleware/validate.middleware";
 import { connectionPointController } from "../controllers/connectionPoint.controller";
 import {
-  createConnectionPointSchema,
-  updateConnectionPointSchema,
-} from "../schema/pointConnection.schema";
+  connectionPointAddressSchema,
+  connectionPointFullSchema,
+  connectionPointPlanSchema,
+  connectionPointUpdateMicrotikSchema,
+} from "../schema/connectionPoint.schema";
 
 const connectionPointRouter = express.Router();
 
 connectionPointRouter.post(
   "/:idCliente",
-  validate(createConnectionPointSchema),
+  validate(connectionPointFullSchema),
   connectionPointController.create,
 );
 
 connectionPointRouter.patch(
-  "/:idPontoConexao",
-  validate(updateConnectionPointSchema),
-  connectionPointController.update,
+  "/plano/:idPontoConexao",
+  validate(connectionPointPlanSchema),
+  connectionPointController.updatePlan,
+);
+
+connectionPointRouter.patch(
+  "/microtik/:idPontoConexao",
+  validate(connectionPointUpdateMicrotikSchema),
+  connectionPointController.updateMicrotik,
+);
+
+connectionPointRouter.patch(
+  "/endereco/:idPontoConexao",
+  validate(connectionPointAddressSchema),
+  connectionPointController.updateAddress,
 );
 
 export default connectionPointRouter;

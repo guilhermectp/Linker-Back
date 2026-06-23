@@ -1,9 +1,9 @@
 import { PontoConexao } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import {
-  TCreateConnectionPoint,
-  TUpdateConnectionPoint,
-} from "../schema/pointConnection.schema";
+  TConnectionPointAddress,
+  TConnectionPointCreate,
+} from "../schema/connectionPoint.schema";
 
 export const connectionPointRepository = {
   getByLoginMk: async (loginMk: string) => {
@@ -20,17 +20,17 @@ export const connectionPointRepository = {
 
   create: async (
     clientId: string,
-    ponto: TCreateConnectionPoint["ponto"],
+    ponto: TConnectionPointCreate,
   ): Promise<PontoConexao> => {
-    const { endereco } = ponto;
+    const { endereco, plano, microtik } = ponto;
 
     return await prisma.pontoConexao.create({
       data: {
         clienteId: clientId,
-        planoId: ponto.planoId,
-        loginMk: ponto.loginMK,
-        senhaMk: ponto.senhaMK,
-        diaVencimento: ponto.diaVencimento,
+        planoId: plano.planoId,
+        diaVencimento: plano.diaVencimento,
+        loginMk: microtik.loginMK,
+        senhaMk: microtik.senhaMK,
         tipoEndereco: endereco.tipoEndereco,
         complemento: endereco.complemento,
         latitude: endereco.latitude ?? null,
@@ -49,38 +49,60 @@ export const connectionPointRepository = {
       },
     });
   },
-
-  update: async (
+  updatePlan: async (
     connectionPointId: string,
-    ponto: TUpdateConnectionPoint["ponto"],
+    data: Partial<Pick<PontoConexao, "planoId" | "diaVencimento">>,
   ): Promise<PontoConexao> => {
-    const endereco = ponto?.endereco;
-
     return await prisma.pontoConexao.update({
       where: { id: connectionPointId },
       data: {
-        ...(ponto?.planoId && { planoId: ponto.planoId }),
-        ...(ponto?.loginMK && { loginMk: ponto.loginMK }),
-        ...(ponto?.diaVencimento && { diaVencimento: ponto.diaVencimento }),
-        ...(endereco && {
-          complemento: endereco.complemento ?? null,
-          latitude: endereco.latitude ?? null,
-          longitude: endereco.longitude ?? null,
-          ...("tipoEndereco" in endereco &&
-            endereco.tipoEndereco === "URBANO" && {
-              tipoEndereco: endereco.tipoEndereco,
-              cep: endereco.cep,
-              cidade: endereco.cidade,
-              bairro: endereco.bairro,
-              rua: endereco.rua,
-              numero: String(endereco.numero),
-            }),
-          ...("tipoEndereco" in endereco &&
-            endereco.tipoEndereco === "RURAL" && {
-              tipoEndereco: endereco.tipoEndereco,
-              nomeLocal: endereco.nomeLocal,
-              cidadeRefencia: endereco.cidadeReferencia,
-            }),
+        ...(data.planoId && { planoId: data.planoId }),
+        ...(data.diaVencimento && { diaVencimento: data.diaVencimento }),
+      },
+    });
+  },
+
+  updateMicrotik: async (
+    connectionPointId: string,
+    data: { loginMK?: string; senhaMK?: string },
+  ): Promise<PontoConexao> => {
+    return await prisma.pontoConexao.update({
+      where: { id: connectionPointId },
+      data: {
+        ...(data.loginMK && { loginMk: data.loginMK }),
+        ...(data.senhaMK && { senhaMk: data.senhaMK }),
+      },
+    });
+  },
+
+  updateAddress: async (
+    connectionPointId: string,
+    data: Partial<TConnectionPointAddress>,
+  ): Promise<PontoConexao> => {
+    return await prisma.pontoConexao.update({
+      where: { id: connectionPointId },
+      data: {
+        ...(data.tipoEndereco && { tipoEndereco: data.tipoEndereco }),
+        complemento: data.complemento ?? null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        ...(data.tipoEndereco === "URBANO" && {
+          cep: data.cep,
+          cidade: data.cidade,
+          bairro: data.bairro,
+          rua: data.rua,
+          numero: String(data.numero),
+          nomeLocal: null,
+          cidadeRefencia: null,
+        }),
+        ...(data.tipoEndereco === "RURAL" && {
+          nomeLocal: data.nomeLocal,
+          cidadeRefencia: data.cidadeReferencia,
+          cep: null,
+          cidade: null,
+          bairro: null,
+          rua: null,
+          numero: null,
         }),
       },
     });
