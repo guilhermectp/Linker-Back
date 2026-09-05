@@ -4,6 +4,11 @@ import { sendResponse } from "../utils/send-response";
 import { connectionPointService } from "../services/connectionPoint.service";
 
 export const connectionPointController = {
+  getByClientId: asyncHandler(async (req: Request, res: Response) => {
+    const idCliente = req.params.idCliente as string;
+    sendResponse(res, await connectionPointService.getByClientId(idCliente));
+  }),
+
   create: asyncHandler(async (req: Request, res: Response) => {
     const idCliente = req.params.idCliente as string;
 

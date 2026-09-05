@@ -17,6 +17,26 @@ import {
 } from "../schema/connectionPoint.schema";
 
 export const connectionPointService = {
+  getByClientId: async (clientId: string) => {
+    try {
+      const pontos = await connectionPointRepository.getByClientId(clientId);
+
+      if (!pontos || pontos.length === 0) {
+        return serviceError(
+          ServiceErrorCode.NOT_FOUND,
+          "Ponto(s) de conexão não encontrado(s).",
+        );
+      }
+
+      return serviceSuccess({ pontos });
+    } catch (error) {
+      return serviceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        "Erro ao buscar pontos de conexão.",
+      );
+    }
+  },
+
   create: async (clientId: string, connectionPoint: TConnectionPointCreate) => {
     const built =
       await connectionPointService.buildConnectionPointData(connectionPoint);

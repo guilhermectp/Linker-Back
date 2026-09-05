@@ -39,4 +39,9 @@ connectionPointRouter.delete(
   connectionPointController.delete,
 );
 
+connectionPointRouter.get(
+  "/:idCliente",
+  connectionPointController.getByClientId,
+);
+
 export default connectionPointRouter;

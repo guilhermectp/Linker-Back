@@ -12,6 +12,12 @@ export const connectionPointRepository = {
     });
   },
 
+  getByClientId: async (clientId: string) => {
+    return await prisma.pontoConexao.findMany({
+      where: { clienteId: clientId },
+    });
+  },
+
   getById: async (id: string): Promise<PontoConexao | null> => {
     return await prisma.pontoConexao.findUnique({
       where: { id },
