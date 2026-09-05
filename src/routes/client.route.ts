@@ -9,7 +9,9 @@ import {
 
 const clientRouter = express.Router();
 
-clientRouter.get("/", clientController.getAll);
+clientRouter.get("/", clientController.getPaginated);
+
+clientRouter.get("/sem-paginacao", clientController.getAll);
 
 clientRouter.get("/:idCliente", clientController.getById);
 

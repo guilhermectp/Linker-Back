@@ -1,6 +1,7 @@
-import { Cliente } from "@prisma/client";
+import { Cliente, Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { TClientCreate, TClientUpdateInfo } from "../schema/client.schema";
+import { TClienteFilters } from "../types/client";
 
 export const clientRepository = {
   getAll: async () => {
@@ -13,6 +14,57 @@ export const clientRepository = {
         },
       },
     });
+  },
+
+  getPaginated: async ({
+    pagina,
+    itemsPorPagina,
+    busca,
+    situacao,
+    tipoEndereco,
+  }: TClienteFilters & { pagina: number; itemsPorPagina: number }) => {
+    const where: Prisma.ClienteWhereInput = {
+      ...(situacao ? { status: situacao } : {}),
+      ...(tipoEndereco
+        ? {
+            pontosConexao: {
+              some: { tipoEndereco },
+            },
+          }
+        : {}),
+      ...(busca
+        ? {
+            OR: [
+              { nome: { contains: busca, mode: "insensitive" } },
+              { cpf: { contains: busca, mode: "insensitive" } },
+              {
+                pontosConexao: {
+                  some: {
+                    loginMk: { contains: busca, mode: "insensitive" },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [clients, total] = await Promise.all([
+      prisma.cliente.findMany({
+        where,
+        skip: (pagina - 1) * itemsPorPagina,
+        take: itemsPorPagina,
+        include: {
+          pontosConexao: {
+            include: { plano: true },
+          },
+        },
+      }),
+
+      prisma.cliente.count({ where }),
+    ]);
+
+    return { clients, total };
   },
 
   getById: async (id: string) => {

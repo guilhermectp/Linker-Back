@@ -13,7 +13,7 @@ import {
 } from "../utils/send-response";
 import { prisma } from "../config/prisma";
 import { clientIntegration } from "../integration/client.integration";
-import { TClienteStatus, TGetCliente } from "../types/client";
+import { TClienteFilters, TClienteStatus, TGetCliente } from "../types/client";
 import { TPontoConexaoStatus } from "../types/connectionPoint";
 import { connectionPointRepository } from "../repository/connectionPoint.repository";
 import { encrypt } from "../utils/encrypt-mk-password";
@@ -21,6 +21,39 @@ import { encrypt } from "../utils/encrypt-mk-password";
 export const clientService = {
   getAll: async () => {
     const clients = await clientRepository.getAll();
+
+    if (clients.length === 0)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Nenhum cliente encontrado.",
+      );
+
+    const mapped: TGetCliente[] = clients.map((cliente) => ({
+      id: cliente.id,
+      nome: cliente.nome,
+      cpf: cliente.cpf,
+      email: cliente.email ?? "",
+      telefone: cliente.telefone,
+      status: cliente.status as TClienteStatus,
+    }));
+
+    return serviceSuccess(mapped);
+  },
+
+  getPaginated: async (filters: TClienteFilters) => {
+    const pagina = filters.pagina && filters.pagina > 0 ? filters.pagina : 1;
+    const itemsPorPagina =
+      filters.itemsPorPagina && filters.itemsPorPagina > 0
+        ? filters.itemsPorPagina
+        : 10;
+
+    const { clients, total } = await clientRepository.getPaginated({
+      pagina,
+      itemsPorPagina,
+      busca: filters.busca,
+      situacao: filters.situacao,
+      tipoEndereco: filters.tipoEndereco,
+    });
 
     if (clients.length === 0)
       return serviceError(
@@ -73,7 +106,12 @@ export const clientService = {
       })),
     }));
 
-    return serviceSuccess(mapped);
+    return serviceSuccess({
+      total,
+      pagina,
+      itemsPorPagina,
+      data: mapped,
+    });
   },
 
   getById: async (id: string) => {

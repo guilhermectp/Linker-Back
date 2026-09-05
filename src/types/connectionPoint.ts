@@ -6,7 +6,7 @@ export type TPontoConexaoStatus =
   | "BLOQUEADO"
   | "CANCELADO";
 
-type TTipoEndereco = "URBANO" | "RURAL";
+export type TTipoEndereco = "URBANO" | "RURAL";
 
 type TEnderecoBase = {
   tipoEndereco: TTipoEndereco;
