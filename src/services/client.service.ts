@@ -28,7 +28,7 @@ export const clientService = {
         "Nenhum cliente encontrado.",
       );
 
-    const mapped: TGetCliente[] = clients.map((cliente) => ({
+    const mapped: Omit<TGetCliente, "pontos">[] = clients.map((cliente) => ({
       id: cliente.id,
       nome: cliente.nome,
       cpf: cliente.cpf,

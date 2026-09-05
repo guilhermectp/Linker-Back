@@ -24,7 +24,7 @@ export const clientController = {
         : undefined,
     };
 
-    sendResponse(res, await clientService.getAll(filters));
+    sendResponse(res, await clientService.getPaginated(filters));
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {
