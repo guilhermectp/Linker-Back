@@ -3,8 +3,7 @@ import { Request, Response } from "express";
 import { clientService } from "../services/client.service";
 import { sendResponse } from "../utils/send-response";
 import { TClienteFilters } from "../types/client";
-import { ClienteStatus } from "@prisma/client";
-import { TTipoEndereco } from "../types/connectionPoint";
+import { TPontoConexaoStatus, TTipoEndereco } from "../types/connectionPoint";
 
 export const clientController = {
   getAll: asyncHandler(async (req: Request, res: Response) => {
@@ -18,7 +17,9 @@ export const clientController = {
       pagina: pagina ? Number(pagina) : undefined,
       itemsPorPagina: itemsPorPagina ? Number(itemsPorPagina) : undefined,
       busca: busca ? String(busca) : undefined,
-      situacao: situacao ? (String(situacao) as ClienteStatus) : undefined,
+      situacao: situacao
+        ? (String(situacao) as TPontoConexaoStatus)
+        : undefined,
       tipoEndereco: tipoEndereco
         ? (String(tipoEndereco) as TTipoEndereco)
         : undefined,

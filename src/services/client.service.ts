@@ -13,7 +13,7 @@ import {
 } from "../utils/send-response";
 import { prisma } from "../config/prisma";
 import { clientIntegration } from "../integration/client.integration";
-import { TClienteFilters, TClienteStatus, TGetCliente } from "../types/client";
+import { TClienteFilters, TGetCliente } from "../types/client";
 import { TPontoConexaoStatus } from "../types/connectionPoint";
 import { connectionPointRepository } from "../repository/connectionPoint.repository";
 import { encrypt } from "../utils/encrypt-mk-password";
@@ -34,7 +34,6 @@ export const clientService = {
       cpf: cliente.cpf,
       email: cliente.email ?? "",
       telefone: cliente.telefone,
-      status: cliente.status as TClienteStatus,
     }));
 
     return serviceSuccess(mapped);
@@ -67,7 +66,6 @@ export const clientService = {
       cpf: cliente.cpf,
       email: cliente.email ?? "",
       telefone: cliente.telefone,
-      status: cliente.status as TClienteStatus,
       pontos: cliente.pontosConexao.map((ponto) => ({
         id: ponto.id,
         status: ponto.status as TPontoConexaoStatus,
@@ -129,7 +127,6 @@ export const clientService = {
       cpf: client.cpf,
       email: client.email ?? "",
       telefone: client.telefone,
-      status: client.status as TClienteStatus,
       pontos: client.pontosConexao.map((ponto) => ({
         id: ponto.id,
         status: ponto.status as TPontoConexaoStatus,

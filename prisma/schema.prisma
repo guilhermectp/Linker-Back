@@ -11,12 +11,6 @@ datasource db {
 // ENUMS
 //////////////////////
 
-enum ClienteStatus {
-  ATIVO
-  INATIVO
-  SUSPENSO
-}
-
 enum ConexaoStatus {
   ATIVO
   REDUZIDO
@@ -55,7 +49,6 @@ model Cliente {
   email            String?          @unique
   telefone         String
   senhaCentralCliente     String
-  status           ClienteStatus    @default(ATIVO)
 
   pontosConexao    PontoConexao[]
   boletos          Boleto[]

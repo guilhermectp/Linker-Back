@@ -24,7 +24,13 @@ export const clientRepository = {
     tipoEndereco,
   }: TClienteFilters & { pagina: number; itemsPorPagina: number }) => {
     const where: Prisma.ClienteWhereInput = {
-      ...(situacao ? { status: situacao } : {}),
+      ...(situacao
+        ? {
+            pontosConexao: {
+              some: { status: situacao },
+            },
+          }
+        : {}),
       ...(tipoEndereco
         ? {
             pontosConexao: {
