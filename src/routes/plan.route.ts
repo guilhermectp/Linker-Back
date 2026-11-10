@@ -5,9 +5,14 @@ import { createPlanSchema, updatePlanSchema } from "../schema/plan.schema";
 
 const planRouter = express.Router();
 
-planRouter.get("/", planController.getAll);
+planRouter.get("/", planController.getPaginated);
+
+planRouter.get("/sem-paginacao", planController.getAll);
+
 planRouter.post("/", validate(createPlanSchema), planController.create);
+
 planRouter.patch("/:nome", validate(updatePlanSchema), planController.update);
+
 planRouter.delete("/:nome", planController.deletePlan);
 
 export default planRouter;

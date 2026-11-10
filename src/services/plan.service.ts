@@ -5,6 +5,7 @@ import {
   TMikrotikPlan,
   TUpdatePlanInput,
 } from "../schema/plan.schema";
+import { TPlan, TPlanFilters } from "../types/plan";
 import {
   serviceError,
   ServiceErrorCode,
@@ -35,6 +36,33 @@ export const planService = {
     }));
 
     return serviceSuccess(allPlans);
+  },
+
+  getPaginated: async (filters: TPlanFilters) => {
+    const pagina = filters.pagina && filters.pagina > 0 ? filters.pagina : 1;
+    const itemsPorPagina =
+      filters.itemsPorPagina && filters.itemsPorPagina > 0
+        ? filters.itemsPorPagina
+        : 10;
+
+    const { plans, total } = await planRepository.getPaginated({
+      pagina,
+      itemsPorPagina,
+      busca: filters.busca,
+    });
+
+    if (plans.length === 0)
+      return serviceError(
+        ServiceErrorCode.NOT_FOUND,
+        "Nenhum plano encontrado.",
+      );
+
+    const allPlans = plans.map((plan) => ({
+      ...plan,
+      valor: Number(plan.valor),
+    }));
+
+    return serviceSuccess({ total, pagina, itemsPorPagina, data: allPlans });
   },
 
   create: async (planData: TCreatePlanInput) => {

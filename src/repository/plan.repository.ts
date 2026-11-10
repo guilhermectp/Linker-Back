@@ -1,10 +1,33 @@
 import { prisma } from "../config/prisma";
 import { Plano, Prisma } from "@prisma/client";
 import { TCreatePlanInput, TUpdatePlanInput } from "../schema/plan.schema";
+import { TPlanFilters } from "../types/plan";
 
 export const planRepository = {
   getAll: async (): Promise<Plano[]> => {
     return await prisma.plano.findMany();
+  },
+
+  getPaginated: async ({ pagina, itemsPorPagina, busca }: TPlanFilters) => {
+    const where: Prisma.PlanoWhereInput = {
+      ...(busca
+        ? {
+            OR: [{ nome: { contains: busca, mode: "insensitive" } }],
+          }
+        : {}),
+    };
+
+    const [plans, total] = await Promise.all([
+      prisma.plano.findMany({
+        where,
+        skip: (pagina - 1) * itemsPorPagina,
+        take: itemsPorPagina,
+      }),
+
+      prisma.plano.count({ where }),
+    ]);
+
+    return { plans, total };
   },
 
   getPlanById: async (id: string): Promise<Plano | null> => {
