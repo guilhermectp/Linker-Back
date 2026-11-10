@@ -116,8 +116,11 @@ export const connectionPointRepository = {
   },
 
   delete: async (connectionPointId: string): Promise<PontoConexao> => {
-    return await prisma.pontoConexao.delete({
+    return await prisma.pontoConexao.update({
       where: { id: connectionPointId },
+      data: {
+        status: "CANCELADO",
+      },
     });
   },
 };
